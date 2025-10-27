@@ -1,6 +1,12 @@
 package com.bleurubin.budgetanalyzer.currency.config;
 
-import com.bleurubin.service.api.ApiErrorResponse;
+import java.time.Instant;
+
+import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Contact;
@@ -13,11 +19,8 @@ import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
-import java.time.Instant;
-import org.springdoc.core.customizers.OpenApiCustomizer;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
+
+import com.bleurubin.service.api.ApiErrorResponse;
 
 @Configuration
 @OpenAPIDefinition(

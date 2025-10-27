@@ -1,9 +1,10 @@
 package com.bleurubin.budgetanalyzer.currency;
 
-import com.bleurubin.budgetanalyzer.currency.config.CurrencyServiceProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+
+import com.bleurubin.budgetanalyzer.currency.config.CurrencyServiceProperties;
 
 @SpringBootApplication
 @EnableConfigurationProperties(CurrencyServiceProperties.class)

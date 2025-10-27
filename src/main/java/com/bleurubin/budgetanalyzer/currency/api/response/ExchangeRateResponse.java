@@ -1,9 +1,10 @@
 package com.bleurubin.budgetanalyzer.currency.api.response;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Currency;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Exchange rate ")
 public class ExchangeRateResponse {

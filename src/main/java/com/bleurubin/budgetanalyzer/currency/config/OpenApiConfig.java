@@ -23,7 +23,7 @@ import com.bleurubin.service.config.BaseOpenApiConfig;
     servers = {
       @Server(url = "http://localhost:8080/api", description = "Local environment (via gateway)"),
       @Server(
-          url = "http://localhost:8082/currency-service",
+          url = "http://localhost:8084/currency-service",
           description = "Local environment (direct)"),
       @Server(url = "https://api.bleurubin.com", description = "Production environment")
     },

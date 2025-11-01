@@ -134,7 +134,7 @@ public class ExchangeRateController {
           @RequestParam
           Currency targetCurrency) {
     log.info(
-        "Received get exchange-rates request startDate: {} endDate: {} targetCurrency: {}",
+        "Received get getExchangeRates startDate: {} endDate: {} targetCurrency: {}",
         startDate.orElse(null),
         endDate.orElse(null),
         targetCurrency);
@@ -144,5 +144,24 @@ public class ExchangeRateController {
             targetCurrency, startDate.orElse(null), endDate.orElse(null));
 
     return exchangeRates.stream().map(ExchangeRateResponse::from).toList();
+  }
+
+  @Operation(
+      summary = "Import latest available rates from FRED",
+      description =
+          "Retrieve latest un-imported available rates from FRED- manually triggers daily cron job")
+  @ApiResponses(
+      value = {
+        @ApiResponse(
+            responseCode = "200",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    array = @ArraySchema(schema = @Schema(implementation = ExchangeRate.class)))),
+      })
+  @GetMapping(path = "/importLatest", produces = "application/json")
+  public List<ExchangeRate> importLatestExchangeRates() {
+    log.info("Received importLatestExchangeRates request");
+    return exchangeRateImportService.importLatestExchangeRates();
   }
 }

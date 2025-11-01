@@ -25,8 +25,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.bleurubin.budgetanalyzer.currency.api.response.ExchangeRateResponse;
-import com.bleurubin.budgetanalyzer.currency.domain.ExchangeRate;
-import com.bleurubin.budgetanalyzer.currency.dto.ImportResult;
+import com.bleurubin.budgetanalyzer.currency.api.response.ImportResultResponse;
 import com.bleurubin.budgetanalyzer.currency.service.ExchangeRateImportService;
 import com.bleurubin.budgetanalyzer.currency.service.ExchangeRateService;
 
@@ -93,7 +92,7 @@ public class ExchangeRateController {
   @Operation(
       summary = "Import latest available rates from FRED",
       description =
-          "Retrieve latest un-imported available rates from FRED- manually triggers daily cron job")
+          "Retrieve latest un-imported exchange rates from FRED- manually triggers daily cron job")
   @ApiResponses(
       value = {
         @ApiResponse(
@@ -101,11 +100,13 @@ public class ExchangeRateController {
             content =
                 @Content(
                     mediaType = "application/json",
-                    array = @ArraySchema(schema = @Schema(implementation = ExchangeRate.class)))),
+                    schema = @Schema(implementation = ImportResultResponse.class))),
       })
-  @GetMapping(path = "/importLatest", produces = "application/json")
-  public ImportResult importLatestExchangeRates() {
+  @GetMapping(path = "/import", produces = "application/json")
+  public ImportResultResponse importLatestExchangeRates() {
     log.info("Received importLatestExchangeRates request");
-    return exchangeRateImportService.importLatestExchangeRates();
+
+    var importResult = exchangeRateImportService.importLatestExchangeRates();
+    return ImportResultResponse.from(importResult);
   }
 }

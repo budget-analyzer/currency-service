@@ -22,8 +22,6 @@ import com.bleurubin.service.exception.ResourceNotFoundException;
 @Service
 public class ExchangeRateServiceImpl implements ExchangeRateService {
 
-  private static final Currency DEFAULT_BASE_CURRENCY = Currency.getInstance("USD");
-
   private final ExchangeRateRepository exchangeRateRepository;
 
   public ExchangeRateServiceImpl(ExchangeRateRepository exchangeRateRepository) {

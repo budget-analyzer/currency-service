@@ -33,7 +33,7 @@ public class ExchangeRateImportServiceImpl implements ExchangeRateImportService 
 
   private static final long MAX_FRED_FILE_SIZE = 307200;
   private static final long BYTES_PER_KB = 1024;
-  private static final long BYTES_PER_DAY_ESTIMATE = 20;
+  private static final long BYTES_PER_DAY_ESTIMATE = 25;
   private static final double SIZE_TOLERANCE_FACTOR = 4.0; // Allow 4x the expected size
   private static final String FRED_FORMAT = "FRED";
 

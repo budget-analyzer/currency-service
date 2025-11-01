@@ -134,7 +134,7 @@ public class ExchangeRateController {
           @RequestParam
           Currency targetCurrency) {
     log.info(
-        "Received get getExchangeRates startDate: {} endDate: {} targetCurrency: {}",
+        "Received get getExchangeRates request startDate: {} endDate: {} targetCurrency: {}",
         startDate.orElse(null),
         endDate.orElse(null),
         targetCurrency);

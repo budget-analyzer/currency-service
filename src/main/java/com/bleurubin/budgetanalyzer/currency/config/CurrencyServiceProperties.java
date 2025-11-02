@@ -33,7 +33,6 @@ public class CurrencyServiceProperties {
     private boolean importOnStartup = true;
 
     @Valid private Fred fred = new Fred();
-
     @Valid private Retry retry = new Retry();
 
     public String getCron() {

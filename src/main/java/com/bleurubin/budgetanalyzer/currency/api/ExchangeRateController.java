@@ -39,7 +39,6 @@ public class ExchangeRateController {
   private static final Currency THB = Currency.getInstance("THB");
 
   private final ExchangeRateImportService exchangeRateImportService;
-
   private final ExchangeRateService exchangeRateService;
 
   public ExchangeRateController(

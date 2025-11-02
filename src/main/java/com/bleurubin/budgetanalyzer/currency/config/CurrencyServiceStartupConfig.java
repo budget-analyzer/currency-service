@@ -7,7 +7,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import com.bleurubin.budgetanalyzer.currency.service.ExchangeRateImportService;
-import com.bleurubin.core.util.JsonUtils;
+import com.bleurubin.core.logging.SafeLogger;
 
 @Component
 public class CurrencyServiceStartupConfig {
@@ -47,7 +47,7 @@ public class CurrencyServiceStartupConfig {
       var importResult = exchangeRateImportService.importLatestExchangeRates();
       log.info(
           "Successfully completed startup exchange rate import: {}",
-          JsonUtils.toJson(importResult));
+          SafeLogger.toJson(importResult));
     } catch (Exception e) {
       log.error("CRITICAL: failed to import exchange rates on startup, exiting...", e);
       throw new IllegalStateException(
@@ -59,6 +59,6 @@ public class CurrencyServiceStartupConfig {
   }
 
   private void logConfiguration() {
-    log.info("Currency Service Configuration:\n{}", JsonUtils.toJson(currencyServiceProperties));
+    log.info("Currency Service Configuration:\n{}", SafeLogger.toJson(currencyServiceProperties));
   }
 }

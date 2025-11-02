@@ -3,9 +3,12 @@ package com.bleurubin.budgetanalyzer.currency.config;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
+
+import com.bleurubin.core.logging.Sensitive;
 
 @ConfigurationProperties(prefix = "currency-service")
 @Validated
@@ -67,10 +70,12 @@ public class CurrencyServiceProperties {
 
     public static class Fred {
       /** FRED API base URL */
-      private String baseUrl = "https://fred.stlouisfed.org";
+      private String baseUrl = "https://api.stlouisfed.org/fred";
 
-      /** FRED series ID for USD/THB exchange rate */
-      private String seriesId = "DEXTHUS";
+      /** FRED API key - should be set via environment variable */
+      @NotBlank(message = "FRED API key must be configured")
+      @Sensitive(showLast = 4)
+      private String apiKey;
 
       public String getBaseUrl() {
         return baseUrl;
@@ -80,21 +85,12 @@ public class CurrencyServiceProperties {
         this.baseUrl = baseUrl;
       }
 
-      public String getSeriesId() {
-        return seriesId;
+      public String getApiKey() {
+        return apiKey;
       }
 
-      public void setSeriesId(String seriesId) {
-        this.seriesId = seriesId;
-      }
-
-      /** Builds the full CSV download URL */
-      public String buildCsvUrl(String cosd) {
-        String url = baseUrl + "/graph/fredgraph.csv?id=" + seriesId;
-        if (cosd != null) {
-          url += "&cosd=" + cosd;
-        }
-        return url;
+      public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
       }
     }
 

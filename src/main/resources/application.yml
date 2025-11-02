@@ -7,6 +7,7 @@ logging:
   level:
     root: WARN
     com.bleurubin: TRACE
+    org.springframework.web.reactive.function.client: DEBUG
 
 spring:
   application:

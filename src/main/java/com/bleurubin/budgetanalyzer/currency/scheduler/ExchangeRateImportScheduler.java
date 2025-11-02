@@ -30,12 +30,12 @@ public class ExchangeRateImportScheduler {
       TaskScheduler taskScheduler,
       MeterRegistry meterRegistry,
       CurrencyServiceProperties properties,
-      ExchangeRateImportService importService) {
+      ExchangeRateImportService exchangeRateImportService) {
 
     this.taskScheduler = taskScheduler;
     this.meterRegistry = meterRegistry;
     this.properties = properties;
-    this.exchangeRateImportService = importService;
+    this.exchangeRateImportService = exchangeRateImportService;
   }
 
   @Scheduled(cron = "${currency-service.exchange-rate-import.cron:0 0 23 * * ?}", zone = "UTC")

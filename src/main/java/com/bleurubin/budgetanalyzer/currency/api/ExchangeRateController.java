@@ -36,6 +36,8 @@ public class ExchangeRateController {
 
   private static final Logger log = LoggerFactory.getLogger(ExchangeRateController.class);
 
+  private static final Currency THB = Currency.getInstance("THB");
+
   private final ExchangeRateImportService exchangeRateImportService;
 
   private final ExchangeRateService exchangeRateService;
@@ -106,6 +108,7 @@ public class ExchangeRateController {
   public ImportResultResponse importLatestExchangeRates() {
     log.info("Received importLatestExchangeRates request");
 
+    // we will take currency as parameter when we support multiple currencies
     var importResult = exchangeRateImportService.importLatestExchangeRates();
     return ImportResultResponse.from(importResult);
   }

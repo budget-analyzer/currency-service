@@ -14,7 +14,7 @@ import io.micrometer.core.instrument.Timer;
 
 import com.bleurubin.budgetanalyzer.currency.config.CurrencyServiceProperties;
 import com.bleurubin.budgetanalyzer.currency.service.ExchangeRateImportService;
-import com.bleurubin.core.util.JsonUtils;
+import com.bleurubin.core.logging.SafeLogger;
 
 @Component
 public class ExchangeRateImportScheduler {
@@ -58,7 +58,7 @@ public class ExchangeRateImportScheduler {
       log.info(
           "Successfully completed exchange rate import on attempt {} result: {}",
           attemptNumber,
-          JsonUtils.toJson(result));
+          SafeLogger.toJson(result));
 
       recordSuccess(sample, attemptNumber);
     } catch (Exception e) {

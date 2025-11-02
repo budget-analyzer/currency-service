@@ -7,6 +7,7 @@ logging:
   level:
     root: WARN
     com.bleurubin: TRACE
+    org.springframework.web.reactive.function.client: DEBUG
 
 spring:
   application:
@@ -44,14 +45,13 @@ currency-service:
 
     # FRED API configuration
     fred:
-      base-url: https://fred.stlouisfed.org
-      series-id: DEXTHUS
+      base-url: https://api.stlouisfed.org/fred
+      api-key: ${FRED_API_KEY}
 
     # Retry configuration
     retry:
       # Maximum number of retry attempts (including initial attempt)
       # Example: max-attempts=3 means 1 initial + 2 retries
       max-attempts: 3
-
       # Delay between retries in minutes
       delay-minutes: 1

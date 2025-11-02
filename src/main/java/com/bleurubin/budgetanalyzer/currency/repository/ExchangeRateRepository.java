@@ -12,7 +12,8 @@ import com.bleurubin.budgetanalyzer.currency.domain.ExchangeRate;
 public interface ExchangeRateRepository
     extends JpaRepository<ExchangeRate, Long>, JpaSpecificationExecutor<ExchangeRate> {
 
-  Optional<ExchangeRate> findTopByOrderByDateDesc();
+  Optional<ExchangeRate> findTopByBaseCurrencyAndTargetCurrencyOrderByDateDesc(
+      Currency baseCurrency, Currency targetCurrency);
 
   Optional<ExchangeRate> findByBaseCurrencyAndTargetCurrencyAndDate(
       Currency baseCurrency, Currency targetCurrency, LocalDate date);

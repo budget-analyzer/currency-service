@@ -30,6 +30,8 @@ dependencies {
     implementation ("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("net.javacrumbs.shedlock:shedlock-spring:6.0.2")
+    implementation("net.javacrumbs.shedlock:shedlock-provider-jdbc-template:6.0.2")
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
 

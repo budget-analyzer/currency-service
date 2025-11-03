@@ -198,19 +198,24 @@ public class ExchangeRateService {
 - Enforces naming conventions
 
 **Build Commands:**
+
+**IMPORTANT**: Always use these two commands in sequence. Never use other gradle commands like `check`, `bootJar`, `checkstyleMain`, etc.
+
 ```bash
-# Format code
+# 1. Format code (always run first)
 ./gradlew spotlessApply
 
-# Check formatting
-./gradlew spotlessCheck
-
-# Run checkstyle
-./gradlew checkstyleMain
-
-# Run all checks
-./gradlew check
+# 2. Build and test (always run second)
+./gradlew clean build
 ```
+
+The `clean build` command will:
+- Clean previous build artifacts
+- Compile all source code
+- Run Spotless checks
+- Run Checkstyle
+- Run all unit and integration tests
+- Build the JAR file
 
 ## Service Features
 
@@ -268,6 +273,77 @@ Key Prefix: currency-service: (namespace isolation)
 - Cache logic: [CacheConfig.java](src/main/java/com/bleurubin/budgetanalyzer/currency/config/CacheConfig.java)
 - Redis connection: [application.yml](src/main/resources/application.yml)
 - Service annotations: `@Cacheable`, `@CacheEvict` in service classes
+
+### Distributed Locking for Scheduled Tasks
+
+**Implementation: ShedLock with JDBC/PostgreSQL**
+
+The service uses ShedLock to ensure scheduled tasks run only once across multiple application instances in production deployments.
+
+**Problem:** Without distributed locking, every pod would execute the exchange rate import job simultaneously, causing:
+- Duplicate FRED API calls
+- Unnecessary database load
+- Race conditions when writing exchange rates
+- Cache thrashing from multiple invalidations
+
+**Solution:** ShedLock provides distributed coordination using the PostgreSQL database as the lock provider.
+
+**How It Works:**
+1. When the scheduled task triggers (daily at 11 PM UTC), each pod attempts to acquire a lock by inserting/updating a row in the `shedlock` table
+2. Only one pod successfully acquires the lock (successful database write) and executes the import
+3. Other pods skip execution (database constraint violation - lock already held)
+4. Lock automatically expires after `lockAtMostFor` duration (prevents deadlocks if pod crashes)
+5. Lock must be held for at least `lockAtLeastFor` duration (prevents too-frequent executions)
+
+**Lock Configuration:**
+```java
+@SchedulerLock(
+    name = "exchangeRateImport",     // Unique lock name
+    lockAtMostFor = "15m",             // Max lock duration (safety timeout)
+    lockAtLeastFor = "1m"              // Min lock duration
+)
+```
+
+**Lock Duration Guidelines:**
+- `lockAtMostFor` (15 minutes): Longer than expected import time (~30 seconds) to prevent premature release, but short enough to allow retry if pod crashes
+- `lockAtLeastFor` (1 minute): Prevents rapid re-execution if job completes quickly
+
+**Why ShedLock (not custom database locks)?**
+- **Industry standard**: De facto solution for Spring Boot scheduled task coordination
+- **Battle-tested**: Proven in production across thousands of applications
+- **Simple integration**: Just add annotation to scheduled method
+- **Automatic cleanup**: Handles lock release on pod crash via timeout
+- **Clock drift handling**: Built-in safeguards for time synchronization issues
+
+**Why JDBC/PostgreSQL (not Redis)?**
+- **Service independence**: Each microservice uses its own database for locking (no shared Redis dependency)
+- **Better failure isolation**: Database outage only affects one service, not all microservices
+- **Simpler operations**: One less system to monitor (Redis only used for caching, not locking)
+- **Architectural consistency**: Follows microservice principle of independent data stores
+- **Sufficient performance**: Lock operations once per day - database latency (10-50ms) is acceptable
+
+**Database Schema:**
+```sql
+CREATE TABLE shedlock (
+    name VARCHAR(64) PRIMARY KEY,
+    lock_until TIMESTAMP NOT NULL,
+    locked_at TIMESTAMP NOT NULL,
+    locked_by VARCHAR(255) NOT NULL
+);
+```
+
+**Configuration Files:**
+- Lock configuration: [ShedLockConfig.java](src/main/java/com/bleurubin/budgetanalyzer/currency/config/ShedLockConfig.java)
+- Database migration: [V2__add_shedlock_table.sql](src/main/resources/db/migration/V2__add_shedlock_table.sql)
+- Scheduler with lock: [ExchangeRateImportScheduler.java:42](src/main/java/com/bleurubin/budgetanalyzer/currency/scheduler/ExchangeRateImportScheduler.java#L42)
+- Configuration: [application.yml:68-94](src/main/resources/application.yml#L68-L94)
+- Dependencies: [build.gradle.kts:33-34](build.gradle.kts#L33-L34)
+
+**Monitoring:**
+- ShedLock doesn't provide built-in metrics, but you can monitor:
+  - Application logs: "Starting scheduled exchange rate import" indicates lock acquired
+  - Database query: `SELECT * FROM shedlock WHERE name = 'exchangeRateImport'` shows current lock holder
+  - Import metrics: `exchange.rate.import.executions` (existing Micrometer counter)
 
 ### External Integrations
 
@@ -483,7 +559,7 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 **Before committing:**
 ```bash
 ./gradlew spotlessApply
-./gradlew check
+./gradlew clean build
 ```
 
 ### Git Workflow
@@ -634,8 +710,9 @@ When working on this project:
 - **Follow service layer architecture** - Services accept/return entities, not API DTOs
 - **Use pure JPA only** - No Hibernate-specific imports or annotations
 - **Maintain package separation** - Clear boundaries between api, service, repository, domain
-- **Run Spotless before committing** - `./gradlew spotlessApply`
-- **Ensure all checks pass** - `./gradlew check`
+- **Always run these commands before committing:**
+  1. `./gradlew spotlessApply` - Format code
+  2. `./gradlew clean build` - Build and test everything
 
 ### Architecture Conventions
 
@@ -677,7 +754,7 @@ When working on this project:
 - [ ] **Add WireMock for external API testing** - Mock FRED API responses for reliable external integration tests
 
 #### High Priority - Resilience & Reliability
-- [ ] **Implement distributed locking (Redis/Hazelcast)** - Ensure only one scheduler instance runs import jobs in multi-pod deployments
+- [x] **Implement distributed locking with ShedLock** - Fully implemented with Redis-based distributed locking; ensures only one scheduler instance runs import jobs in multi-pod deployments ([ShedLockConfig.java](src/main/java/com/bleurubin/budgetanalyzer/currency/config/ShedLockConfig.java), [ExchangeRateImportScheduler.java:44](src/main/java/com/bleurubin/budgetanalyzer/currency/scheduler/ExchangeRateImportScheduler.java#L44))
 
 **Note on Circuit Breakers:** Circuit breakers were considered for the FRED API integration but deemed inappropriate. The scheduled import job makes only 1-3 API calls per day (1 request with max 3 retry attempts), which doesn't match the high-frequency usage pattern that circuit breakers are designed for (hundreds to thousands of requests per minute). The existing retry logic with exponential backoff, combined with alerting via Micrometer metrics, is the appropriate solution for this low-frequency scheduled job. Circuit breakers would add unnecessary complexity without providing meaningful benefit.
 

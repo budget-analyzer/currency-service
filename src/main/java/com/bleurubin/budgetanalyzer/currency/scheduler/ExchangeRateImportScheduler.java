@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
 import com.bleurubin.budgetanalyzer.currency.config.CurrencyServiceProperties;
 import com.bleurubin.budgetanalyzer.currency.service.ExchangeRateImportService;
@@ -39,6 +40,7 @@ public class ExchangeRateImportScheduler {
   }
 
   @Scheduled(cron = "${currency-service.exchange-rate-import.cron:0 0 23 * * ?}", zone = "UTC")
+  @SchedulerLock(name = "exchangeRateImport", lockAtMostFor = "15m", lockAtLeastFor = "1m")
   public void importDailyRates() {
     var retryConfig = properties.getExchangeRateImport().getRetry();
 

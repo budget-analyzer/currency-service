@@ -15,7 +15,7 @@ import com.bleurubin.budgetanalyzer.currency.domain.ExchangeRate;
 import com.bleurubin.budgetanalyzer.currency.dto.ImportResult;
 import com.bleurubin.budgetanalyzer.currency.repository.ExchangeRateRepository;
 import com.bleurubin.budgetanalyzer.currency.service.provider.ExchangeRateProvider;
-import com.bleurubin.service.exception.BusinessException;
+import com.bleurubin.service.exception.ServiceException;
 
 @Service
 public class ExchangeRateImportService {
@@ -66,13 +66,10 @@ public class ExchangeRateImportService {
 
       var exchangeRates = buildExchangeRates(dateRateMap, targetCurrency);
       return saveExchangeRates(exchangeRates, targetCurrency);
-    } catch (BusinessException businessException) {
-      throw businessException;
+    } catch (ServiceException serviceException) {
+      throw serviceException;
     } catch (Exception e) {
-      throw new BusinessException(
-          "Failed to import exchange rates: " + e.getMessage(),
-          CurrencyServiceError.CSV_PARSING_ERROR.name(),
-          e);
+      throw new ServiceException("Failed to import exchange rates: " + e.getMessage(), e);
     }
   }
 

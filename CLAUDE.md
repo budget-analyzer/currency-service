@@ -20,32 +20,26 @@ The Currency Service is a production-grade Spring Boot microservice responsible 
 
 The service follows a clean, layered architecture with clear separation of concerns:
 
+- **api/**: REST controllers and API-specific response DTOs only
+- **domain/**: JPA entities representing business domain
+- **service/**: Business logic, orchestration, validation
+- **repository/**: Data access layer (Spring Data JPA)
+- **client/**: External API integrations
+- **config/**: Spring configuration classes
+- **dto/**: Internal data transfer objects (NOT API contracts)
+- **scheduler/**: Scheduled background tasks
+
+**Package Dependency Rules:**
 ```
-com.bleurubin.budgetanalyzer.currency/
-├── api/                          # REST controllers and response DTOs
-│   ├── CurrencyController.java
-│   ├── ExchangeRateController.java
-│   └── response/                 # API response DTOs only
-├── domain/                       # Domain entities
-│   └── ExchangeRate.java
-├── service/                      # Business logic layer
-│   ├── ExchangeRateService.java
-│   ├── ExchangeRateImportService.java
-│   └── provider/                 # Exchange rate data providers
-├── repository/                   # Data access layer
-│   ├── ExchangeRateRepository.java
-│   └── spec/                     # JPA Specifications
-├── client/                       # External API clients
-│   └── fred/                     # FRED API integration
-├── scheduler/                    # Scheduled tasks
-│   └── ExchangeRateImportScheduler.java
-├── config/                       # Configuration classes
-│   ├── OpenApiConfig.java
-│   ├── WebClientConfig.java
-│   ├── CacheConfig.java
-│   └── CurrencyServiceProperties.java
-└── dto/                          # Internal DTOs (not API contracts)
+api → service → repository
+api → domain
+service → domain
+service → repository
+service → client
+repository → domain
 ```
+
+API classes should NEVER be imported by service layer.
 
 ## Architectural Principles
 
@@ -147,28 +141,7 @@ public class ExchangeRateController {
 
 ### 4. Clear Package Separation
 
-Package boundaries should be self-evident from inspection:
-
-- **api**: REST controllers and API-specific response DTOs only
-- **domain**: JPA entities representing business domain
-- **service**: Business logic, orchestration, validation
-- **repository**: Data access layer (Spring Data JPA)
-- **client**: External API integrations
-- **config**: Spring configuration classes
-- **dto**: Internal data transfer objects (NOT API contracts)
-- **scheduler**: Scheduled background tasks
-
-**Package Dependency Rules:**
-```
-api → service → repository
-api → domain
-service → domain
-service → repository
-service → client
-repository → domain
-```
-
-API classes should NEVER be imported by service layer.
+Package boundaries should be self-evident from inspection. See the **Package Structure** section above for the complete package organization and dependency rules.
 
 ### 5. Exception Handling Strategy
 

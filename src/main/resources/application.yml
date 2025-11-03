@@ -64,34 +64,6 @@ spring:
       use-key-prefix: true
       key-prefix: "currency-service:"
 
-# ShedLock Configuration
-# Provides distributed locking for scheduled tasks to prevent duplicate execution
-# across multiple application instances (pods) in production.
-#
-# Implementation: JDBC-based using PostgreSQL 'shedlock' table
-# Table created automatically via Flyway migration V2__add_shedlock_table.sql
-#
-# How it works:
-# - When a scheduled task triggers, ShedLock attempts to acquire a lock by
-#   inserting/updating a row in the 'shedlock' table
-# - If lock is acquired (successful DB write), the task executes on that instance
-# - If lock is held by another instance (DB constraint violation), the task is skipped
-# - Locks automatically expire after lockAtMostFor duration
-#
-# Lock duration guidelines:
-# - lockAtMostFor: Maximum time lock can be held (prevents deadlocks)
-#   Should be longer than expected task execution time
-# - lockAtLeastFor: Minimum time lock must be held (prevents too-frequent execution)
-#   Should be shorter than task execution time
-#
-# Default values are set in @EnableSchedulerLock annotation (10 minutes)
-# Individual tasks can override using @SchedulerLock annotation parameters
-#
-# Why JDBC (not Redis)?
-# - Service independence: Each microservice uses its own database for locking
-# - Better failure isolation: Database outage only affects one service
-# - Simpler operations: One less system to monitor (no separate Redis for locking)
-
 currency-service:
   exchange-rate-import:
     # Cron expression for when the job runs (default: 11 PM UTC / 6 PM EST)

@@ -626,22 +626,38 @@ When working on this project:
 
 ## Future Enhancements
 
-- [ ] Implement MapStruct for DTO mapping
-- [ ] Add Flyway for database migrations
-- [ ] Implement Redis caching layer
-- [ ] Add circuit breakers (Resilience4j)
-- [ ] Implement distributed tracing
-- [ ] Add Prometheus metrics
-- [ ] Implement API rate limiting
-- [ ] Add GraphQL endpoint (optional)
-- [ ] Implement event publishing (Kafka/RabbitMQ)
-- [ ] Add comprehensive integration tests
-- [ ] Implement test containers for integration tests
-- [ ] Add WireMock for external API testing
-- [ ] Implement distributed locking (Redis/Hazelcast)
-- [ ] Add API versioning strategy
-- [ ] Implement request/response logging filter
-- [ ] Add audit logging for data changes
+### Completed ✅
+- [x] **Implement Redis caching layer** - Fully implemented with distributed caching, JSON serialization, and automatic cache invalidation ([CacheConfig.java](src/main/java/com/bleurubin/budgetanalyzer/currency/config/CacheConfig.java))
+
+### In Progress / Partial 🟡
+- [~] **Add Prometheus metrics** - Micrometer instrumentation present with custom metrics in scheduler, but Prometheus endpoint not explicitly configured
+
+### Planned 📋
+
+#### High Priority - Testing & Quality
+- [ ] **Add comprehensive integration tests** - Currently only smoke test exists; need controller, service, and repository layer tests
+- [ ] **Implement test containers for integration tests** - Replace H2 with PostgreSQL/Redis test containers for realistic integration testing
+- [ ] **Add WireMock for external API testing** - Mock FRED API responses for reliable external integration tests
+
+#### High Priority - Resilience & Reliability
+- [ ] **Add circuit breakers (Resilience4j)** - Protect against cascading failures in FRED API integration
+- [ ] **Implement distributed locking (Redis/Hazelcast)** - Ensure only one scheduler instance runs import jobs in multi-pod deployments
+- [ ] **Add Flyway for database migrations** - Version-controlled schema evolution with rollback capabilities
+
+#### Medium Priority - Observability
+- [ ] **Implement distributed tracing** - Add Zipkin/Jaeger for request flow visibility across microservices
+- [ ] **Complete Prometheus metrics setup** - Configure Prometheus endpoint exposure and custom business metrics
+- [ ] **Implement request/response logging filter** - Comprehensive HTTP request/response logging for debugging and audit
+
+#### Medium Priority - Data Management
+- [ ] **Add audit logging for data changes** - Track who changed what and when using JPA entity listeners or interceptors
+- [ ] **Implement MapStruct for DTO mapping** - Replace manual mapping with compile-time safe DTO transformations
+
+#### Low Priority - Optional Features
+- [ ] **Implement API rate limiting** - Protect against abuse with request throttling (may be handled at gateway level)
+- [ ] **Add GraphQL endpoint (optional)** - Provide GraphQL API alongside REST for flexible querying
+- [ ] **Implement event publishing (Kafka/RabbitMQ)** - Publish domain events for exchange rate updates to enable event-driven architecture
+- [ ] **Add API versioning strategy** - Implement URL-based versioning (e.g., `/v1/`, `/v2/`) for backward compatibility
 
 ## Related Documentation
 

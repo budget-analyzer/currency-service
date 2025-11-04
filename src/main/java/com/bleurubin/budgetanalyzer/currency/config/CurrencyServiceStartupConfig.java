@@ -8,19 +8,24 @@ import org.springframework.stereotype.Component;
 
 import com.bleurubin.budgetanalyzer.currency.service.ExchangeRateImportService;
 import com.bleurubin.core.logging.SafeLogger;
+import com.bleurubin.service.http.HttpLoggingProperties;
 
 @Component
 public class CurrencyServiceStartupConfig {
 
   private static final Logger log = LoggerFactory.getLogger(CurrencyServiceStartupConfig.class);
 
-  private final ExchangeRateImportService exchangeRateImportService;
   private final CurrencyServiceProperties currencyServiceProperties;
+  private final HttpLoggingProperties httpLoggingProperties;
+  private final ExchangeRateImportService exchangeRateImportService;
 
   public CurrencyServiceStartupConfig(
-      ExchangeRateImportService importService, CurrencyServiceProperties properties) {
-    this.exchangeRateImportService = importService;
+      CurrencyServiceProperties properties,
+      HttpLoggingProperties httpLoggingProperties,
+      ExchangeRateImportService exchangeRateImportService) {
     this.currencyServiceProperties = properties;
+    this.httpLoggingProperties = httpLoggingProperties;
+    this.exchangeRateImportService = exchangeRateImportService;
   }
 
   @EventListener(ApplicationReadyEvent.class)
@@ -60,5 +65,6 @@ public class CurrencyServiceStartupConfig {
 
   private void logConfiguration() {
     log.info("Currency Service Configuration:\n{}", SafeLogger.toJson(currencyServiceProperties));
+    log.info("Http Logging Configuration:\n{}", SafeLogger.toJson(httpLoggingProperties));
   }
 }

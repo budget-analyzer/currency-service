@@ -82,3 +82,16 @@ currency-service:
       max-attempts: 3
       # Delay between retries in minutes
       delay-minutes: 1
+
+bleurubin:
+  service:
+    http-logging:
+      enabled: true
+      log-level: DEBUG
+      include-request-body: true
+      include-response-body: true
+      max-body-size: 10000
+      exclude-patterns:
+        - /actuator/**
+        - /swagger-ui/**
+        - /v3/api-docs/**

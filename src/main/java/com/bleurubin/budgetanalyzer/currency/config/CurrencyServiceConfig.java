@@ -16,7 +16,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
  */
 @Configuration
 @EnableConfigurationProperties(CurrencyServiceProperties.class)
-@ComponentScan({"com.bleurubin.core.csv", "com.bleurubin.service.api"})
+@ComponentScan({"com.bleurubin.core.csv"})
 public class CurrencyServiceConfig {
 
   /**

@@ -197,6 +197,15 @@ public class ExchangeRateService {
 - Enforces Hibernate import ban
 - Enforces naming conventions
 
+**Variable Declarations:**
+**Use `var` whenever possible** for local variables to reduce verbosity and improve readability.
+  - Prefer `var` whenever possible
+  - Use explicit types only when the only other option is to cast a return type, e.g. 
+  ```java
+  Map<String, Object> details = Map.of("method", "POST", "uri", "/api/users", "status", 201);
+    var body = "{\"name\":\"John Doe\"}";
+  ```
+
 **Build Commands:**
 
 **IMPORTANT**: Always use these two commands in sequence. Never use other gradle commands like `check`, `bootJar`, `checkstyleMain`, etc.
@@ -703,6 +712,7 @@ When working on this project:
 2. **Distinguish between informational statements and action requests** - If the user says "I did X", they're informing you, not asking you to do it
 3. **Questions deserve answers, not implementations** - Respond to questions with information, not code changes
 4. **Wait for explicit implementation requests** - Only implement when the user says "implement", "do it", "make this change", or similar action-oriented language
+5. **Limit file access to the current directory and below** - Don't read or write files outside of the current budget-analyzer-api directory
 
 ### Code Quality
 
@@ -771,14 +781,6 @@ When working on this project:
 - [ ] **Implement API rate limiting** - Protect against abuse with request throttling (may be handled at gateway level)
 - [ ] **Add GraphQL endpoint (optional)** - Provide GraphQL API alongside REST for flexible querying
 - [ ] **Implement event publishing (Kafka/RabbitMQ)** - Publish domain events for exchange rate updates to enable event-driven architecture
-
-## Related Documentation
-
-- [Budget Analyzer Orchestration](../budget-analyzer/CLAUDE.md)
-- [Service Common Documentation](../service-common/CLAUDE.md)
-- [Budget Analyzer API Documentation](../budget-analyzer-api/CLAUDE.md)
-- [Persistence Layer Architecture](../budget-analyzer/docs/persistence-layer-architecture.md)
-- [Service Layer Architecture](../budget-analyzer/docs/service-layer-architecture.md)
 
 ## Support and Contact
 

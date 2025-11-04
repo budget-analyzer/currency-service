@@ -774,9 +774,11 @@ When working on this project:
 
 ## Related Documentation
 
+- [Budget Analyzer Orchestration](../budget-analyzer/CLAUDE.md)
+- [Service Common Documentation](../service-common/CLAUDE.md)
+- [Budget Analyzer API Documentation](../budget-analyzer-api/CLAUDE.md)
 - [Persistence Layer Architecture](../budget-analyzer/docs/persistence-layer-architecture.md)
 - [Service Layer Architecture](../budget-analyzer/docs/service-layer-architecture.md)
-- [Budget Analyzer Orchestration](../budget-analyzer/CLAUDE.md)
 
 ## Support and Contact
 

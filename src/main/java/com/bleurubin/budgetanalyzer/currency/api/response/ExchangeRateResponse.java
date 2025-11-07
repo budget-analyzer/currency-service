@@ -37,12 +37,12 @@ public record ExchangeRateResponse(
             example = "2025-10-31")
         LocalDate publishedDate) {
 
-  public static ExchangeRateResponse from(ExchangeRateData dto) {
+  public static ExchangeRateResponse from(ExchangeRateData exchangeRateData) {
     return new ExchangeRateResponse(
-        dto.baseCurrency().getCurrencyCode(),
-        dto.targetCurrency().getCurrencyCode(),
-        dto.date(),
-        dto.rate(),
-        dto.publishedDate());
+        exchangeRateData.baseCurrency().getCurrencyCode(),
+        exchangeRateData.targetCurrency().getCurrencyCode(),
+        exchangeRateData.date(),
+        exchangeRateData.rate(),
+        exchangeRateData.publishedDate());
   }
 }

@@ -22,8 +22,12 @@ public record ExchangeRateData(
     Objects.requireNonNull(publishedDate, "publishedDate cannot be null");
   }
 
-  public static ExchangeRateData from(ExchangeRate e, LocalDate date) {
+  public static ExchangeRateData from(ExchangeRate exchangeRate, LocalDate date) {
     return new ExchangeRateData(
-        e.getBaseCurrency(), e.getTargetCurrency(), date, e.getRate(), e.getDate());
+        exchangeRate.getBaseCurrency(),
+        exchangeRate.getTargetCurrency(),
+        date,
+        exchangeRate.getRate(),
+        exchangeRate.getDate());
   }
 }

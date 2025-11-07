@@ -42,7 +42,6 @@ public class CurrencyServiceStartupConfig {
 
     log.info("Checking if exchange rate data exists...");
 
-    // TODO: do we need to loop thru currencies here?
     if (exchangeRateImportService.hasExchangeRateData()) {
       log.info("Exchange rate data exists, skipping startup import");
       return;

@@ -62,7 +62,6 @@ public class ExchangeRateImportService {
    * @return true if exchange rate data exists, false otherwise
    */
   public boolean hasExchangeRateData() {
-    // TODO: verify that the rates are for an enabled currency
     return exchangeRateRepository.count() > 0;
   }
 

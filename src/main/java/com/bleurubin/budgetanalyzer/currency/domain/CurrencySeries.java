@@ -29,7 +29,7 @@ public class CurrencySeries extends AuditableEntity {
   @NotNull
   private String providerSeriesId;
 
-  /** Whether this currency is enabled for exchange rate imports. */
+  /** Whether this currency is enabled for exchange rate access. */
   @Column(nullable = false)
   private boolean enabled = true;
 

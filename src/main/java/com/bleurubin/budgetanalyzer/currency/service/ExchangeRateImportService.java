@@ -13,8 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.bleurubin.budgetanalyzer.currency.config.CacheConfig;
+import com.bleurubin.budgetanalyzer.currency.domain.CurrencySeries;
 import com.bleurubin.budgetanalyzer.currency.domain.ExchangeRate;
 import com.bleurubin.budgetanalyzer.currency.dto.ExchangeRateImportResult;
+import com.bleurubin.budgetanalyzer.currency.repository.CurrencySeriesRepository;
 import com.bleurubin.budgetanalyzer.currency.repository.ExchangeRateRepository;
 import com.bleurubin.budgetanalyzer.currency.service.provider.ExchangeRateProvider;
 import com.bleurubin.service.exception.ServiceException;
@@ -33,21 +35,25 @@ public class ExchangeRateImportService {
   // The base currency will always be USD but i wanted to keep the column in the database
   // in case the design needs to change in the future.
   private static final Currency BASE_CURRENCY = Currency.getInstance("USD");
-  private static final Currency THB = Currency.getInstance("THB");
 
   private final ExchangeRateProvider exchangeRateProvider;
   private final ExchangeRateRepository exchangeRateRepository;
+  private final CurrencySeriesRepository currencySeriesRepository;
 
   /**
    * Constructs a new ExchangeRateImportService.
    *
    * @param exchangeRateProvider The provider to fetch exchange rates from
    * @param exchangeRateRepository The exchange rate data access repository
+   * @param currencySeriesRepository The currency series data access repository
    */
   public ExchangeRateImportService(
-      ExchangeRateProvider exchangeRateProvider, ExchangeRateRepository exchangeRateRepository) {
+      ExchangeRateProvider exchangeRateProvider,
+      ExchangeRateRepository exchangeRateRepository,
+      CurrencySeriesRepository currencySeriesRepository) {
     this.exchangeRateProvider = exchangeRateProvider;
     this.exchangeRateRepository = exchangeRateRepository;
+    this.currencySeriesRepository = currencySeriesRepository;
   }
 
   /**
@@ -56,40 +62,88 @@ public class ExchangeRateImportService {
    * @return true if exchange rate data exists, false otherwise
    */
   public boolean hasExchangeRateData() {
-    return exchangeRateRepository
-        .findTopByBaseCurrencyAndTargetCurrencyOrderByDateDesc(BASE_CURRENCY, THB)
-        .isPresent();
+    // TODO: verify that the rates are for an enabled currency
+    return exchangeRateRepository.count() > 0;
   }
 
   /**
-   * Imports the latest exchange rates from the external provider.
+   * Imports the latest exchange rates from the external provider for all enabled currencies.
    *
    * <p>After successful import, evicts all cached exchange rate queries to ensure immediate
    * consistency across all application instances.
    *
-   * @return import result with counts of new, updated, and skipped rates
+   * @return import result with combined counts of new, updated, and skipped rates across all
+   *     currencies
    */
   @Transactional
   @CacheEvict(cacheNames = CacheConfig.EXCHANGE_RATES_CACHE, allEntries = true)
   public ExchangeRateImportResult importLatestExchangeRates() {
-    // we will take this as a method parameter when we support more currencies
-    var targetCurrency = THB;
-    var startDate = determineStartDate(targetCurrency);
+    var enabledCurrencies = currencySeriesRepository.findByEnabledTrue();
 
-    return importExchangeRates(targetCurrency, startDate);
+    if (enabledCurrencies.isEmpty()) {
+      log.warn("No enabled currency series found - skipping import");
+      return new ExchangeRateImportResult(0, 0, 0, null, null);
+    }
+
+    log.info("Found {} enabled currency series for import", enabledCurrencies.size());
+
+    var totalNew = 0;
+    var totalUpdated = 0;
+    var totalSkipped = 0;
+    LocalDate earliestDate = null;
+    LocalDate latestDate = null;
+
+    for (var currencySeries : enabledCurrencies) {
+      var targetCurrency = Currency.getInstance(currencySeries.getCurrencyCode());
+      var startDate = determineStartDate(targetCurrency);
+      var result = importExchangeRates(currencySeries, startDate);
+
+      totalNew += result.newRecords();
+      totalUpdated += result.updatedRecords();
+      totalSkipped += result.skippedRecords();
+
+      if (result.earliestExchangeRateDate() != null) {
+        if (earliestDate == null || result.earliestExchangeRateDate().isBefore(earliestDate)) {
+          earliestDate = result.earliestExchangeRateDate();
+        }
+      }
+
+      if (result.latestExchangeRateDate() != null) {
+        if (latestDate == null || result.latestExchangeRateDate().isAfter(latestDate)) {
+          latestDate = result.latestExchangeRateDate();
+        }
+      }
+    }
+
+    log.info(
+        "Import complete for all currencies: {} new, {} updated, {} skipped, earliest date: {},"
+            + " latest date: {}",
+        totalNew,
+        totalUpdated,
+        totalSkipped,
+        earliestDate,
+        latestDate);
+
+    return new ExchangeRateImportResult(
+        totalNew, totalUpdated, totalSkipped, earliestDate, latestDate);
   }
 
   private ExchangeRateImportResult importExchangeRates(
-      Currency targetCurrency, LocalDate startDate) {
+      CurrencySeries currencySeries, LocalDate startDate) {
+    // TODO: Exchange Rates need a relationship to CurrencySeries
+    var targetCurrency = Currency.getInstance(currencySeries.getCurrencyCode());
+
     try {
       log.info(
-          "Importing exchange rates targetCurrency: {} startDate: {}", targetCurrency, startDate);
+          "Importing exchange rates for {} (series: {}) startDate: {}",
+          currencySeries.getCurrencyCode(),
+          currencySeries.getProviderSeriesId(),
+          startDate);
 
-      var dateRateMap =
-          exchangeRateProvider.getExchangeRates(BASE_CURRENCY, targetCurrency, startDate);
+      var dateRateMap = exchangeRateProvider.getExchangeRates(currencySeries, startDate);
 
       if (dateRateMap.isEmpty()) {
-        log.warn("No exchange rates provided");
+        log.warn("No exchange rates provided for {}", currencySeries.getCurrencyCode());
         return new ExchangeRateImportResult(0, 0, 0, null, null);
       }
 
@@ -98,7 +152,12 @@ public class ExchangeRateImportService {
     } catch (ServiceException serviceException) {
       throw serviceException;
     } catch (Exception e) {
-      throw new ServiceException("Failed to import exchange rates: " + e.getMessage(), e);
+      throw new ServiceException(
+          "Failed to import exchange rates for "
+              + currencySeries.getCurrencyCode()
+              + ": "
+              + e.getMessage(),
+          e);
     }
   }
 

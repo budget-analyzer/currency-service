@@ -1,0 +1,117 @@
+package com.bleurubin.budgetanalyzer.currency.service;
+
+import java.util.Currency;
+import java.util.List;
+
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.bleurubin.budgetanalyzer.currency.domain.CurrencySeries;
+import com.bleurubin.budgetanalyzer.currency.repository.CurrencySeriesRepository;
+import com.bleurubin.service.exception.BusinessException;
+import com.bleurubin.service.exception.ResourceNotFoundException;
+
+/** Service for managing currency operations. */
+@Service
+public class CurrencyService {
+
+  private final CurrencySeriesRepository currencySeriesRepository;
+
+  /**
+   * Constructor for CurrencyService.
+   *
+   * @param currencySeriesRepository The currency series repository
+   */
+  public CurrencyService(CurrencySeriesRepository currencySeriesRepository) {
+    this.currencySeriesRepository = currencySeriesRepository;
+  }
+
+  /**
+   * Create a new currency series.
+   *
+   * @param currencySeries The currency series to create
+   * @return The created currency series
+   * @throws BusinessException if currency code is invalid or already exists
+   */
+  @Transactional
+  public CurrencySeries create(CurrencySeries currencySeries) {
+    validateCurrencyCode(currencySeries.getCurrencyCode());
+
+    try {
+      return currencySeriesRepository.save(currencySeries);
+    } catch (DataIntegrityViolationException e) {
+      throw new BusinessException(
+          "Currency code '" + currencySeries.getCurrencyCode() + "' already exists",
+          CurrencyServiceError.DUPLICATE_CURRENCY_CODE.name());
+    }
+  }
+
+  /**
+   * Get a currency series by ID.
+   *
+   * @param id The currency series ID
+   * @return The currency series
+   * @throws ResourceNotFoundException if currency series not found
+   */
+  @Transactional(readOnly = true)
+  public CurrencySeries getById(Long id) {
+    return currencySeriesRepository
+        .findById(id)
+        .orElseThrow(
+            () -> new ResourceNotFoundException("Currency series not found with id: " + id));
+  }
+
+  /**
+   * Get all currency series.
+   *
+   * @param enabledOnly If true, return only enabled currency series; if false, return all
+   * @return List of currency series
+   */
+  @Transactional(readOnly = true)
+  public List<CurrencySeries> getAll(boolean enabledOnly) {
+    return enabledOnly
+        ? currencySeriesRepository.findByEnabledTrue()
+        : currencySeriesRepository.findAll();
+  }
+
+  /**
+   * Update an existing currency series.
+   *
+   * <p>Note: Currency code is immutable and cannot be changed. Only providerSeriesId and enabled
+   * can be updated.
+   *
+   * @param id The currency series ID
+   * @param providerSeriesId The new provider series ID
+   * @param enabled The new enabled status
+   * @return The updated currency series
+   * @throws ResourceNotFoundException if currency series not found
+   */
+  @Transactional
+  public CurrencySeries update(Long id, String providerSeriesId, boolean enabled) {
+    var currencySeries = getById(id);
+    currencySeries.setProviderSeriesId(providerSeriesId);
+    currencySeries.setEnabled(enabled);
+
+    return currencySeriesRepository.save(currencySeries);
+  }
+
+  /**
+   * Validate that the currency code is a valid ISO 4217 code.
+   *
+   * <p>Note: Format validation (3 uppercase letters) is already handled by Bean Validation in the
+   * request DTO. This method only checks ISO 4217 validity.
+   *
+   * @param currencyCode The currency code to validate
+   * @throws BusinessException if currency code is not a valid ISO 4217 code
+   */
+  private void validateCurrencyCode(String currencyCode) {
+    try {
+      Currency.getInstance(currencyCode);
+    } catch (IllegalArgumentException e) {
+      throw new BusinessException(
+          "Invalid ISO 4217 currency code: " + currencyCode,
+          CurrencyServiceError.INVALID_ISO_4217_CODE.name());
+    }
+  }
+}

@@ -2,8 +2,9 @@ package com.bleurubin.budgetanalyzer.currency.service.provider;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Currency;
 import java.util.Map;
+
+import com.bleurubin.budgetanalyzer.currency.domain.CurrencySeries;
 
 /** Provider interface for fetching exchange rates from external data sources. */
 public interface ExchangeRateProvider {
@@ -11,11 +12,9 @@ public interface ExchangeRateProvider {
   /**
    * Retrieves exchange rates from the data source.
    *
-   * @param baseCurrency The base currency (e.g., USD)
-   * @param targetCurrency The target currency to get exchange rates for
-   * @param startDate The start date for the exchange rate data
+   * @param currencySeries The currency series containing currency code and provider series ID
+   * @param startDate The start date for the exchange rate data (null = fetch all)
    * @return Map of dates to exchange rates
    */
-  Map<LocalDate, BigDecimal> getExchangeRates(
-      Currency baseCurrency, Currency targetCurrency, LocalDate startDate);
+  Map<LocalDate, BigDecimal> getExchangeRates(CurrencySeries currencySeries, LocalDate startDate);
 }

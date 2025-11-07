@@ -23,7 +23,7 @@ public record CurrencySeriesResponse(
             example = "DEXUSEU")
         String providerSeriesId,
     @Schema(
-            description = "Whether this currency is enabled for get exchange rate requests",
+            description = "Whether this currency is enabled for exchange rate access",
             requiredMode = Schema.RequiredMode.REQUIRED,
             example = "true")
         boolean enabled) {

@@ -27,7 +27,7 @@ public record CurrencySeriesCreateRequest(
         @Size(max = 50, message = "Provider series ID must not exceed 50 characters")
         String providerSeriesId,
     @Schema(
-            description = "Whether this currency is enabled for exchange rate imports",
+            description = "Whether this currency is enabled for exchange rate access",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED,
             example = "true",
             defaultValue = "true")

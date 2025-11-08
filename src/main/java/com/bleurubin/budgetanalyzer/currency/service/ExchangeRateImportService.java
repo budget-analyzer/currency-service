@@ -58,28 +58,30 @@ public class ExchangeRateImportService {
   }
 
   /**
-   * Checks if all enabled currency series have exchange rate data in the database.
+   * Imports exchange rates only for enabled currency series that are missing data. Called at
+   * startup by CurrencyServiceStartupConfig.
    *
-   * @return true if all enabled currency series have at least one exchange rate, false otherwise
+   * <p>This method intelligently checks each enabled currency series and only imports data for
+   * those that have no exchange rates in the database. This is more efficient than importing for
+   * all currencies when most already have data.
+   *
+   * <p>After successful import, evicts all cached exchange rate queries to ensure immediate
+   * consistency across all application instances.
+   *
+   * @return import result with combined counts of new, updated, and skipped rates
    */
-  public boolean hasEnabledExchangeRateData() {
-    var enabledSeries = currencySeriesRepository.findByEnabledTrue();
+  @Transactional
+  @CacheEvict(cacheNames = CacheConfig.EXCHANGE_RATES_CACHE, allEntries = true)
+  public ExchangeRateImportResult importMissingExchangeRates() {
+    log.info("Checking if all enabled currency series have exchange rate data...");
 
-    if (enabledSeries.isEmpty()) {
-      return false;
-    }
-
-    for (var series : enabledSeries) {
-      if (exchangeRateRepository.countByCurrencySeries(series) == 0) {
-        return false;
-      }
-    }
-
-    return true;
+    var seriesToImport = getSeriesWithMissingData();
+    return importExchangeRatesForSeries(seriesToImport);
   }
 
   /**
-   * Imports the latest exchange rates from the external provider for all enabled currencies.
+   * Imports the latest exchange rates from the external provider for all enabled currencies. Called
+   * from a daily scheduled job in ExchangeRateImportScheduler.
    *
    * <p>After successful import, evicts all cached exchange rate queries to ensure immediate
    * consistency across all application instances.
@@ -90,14 +92,64 @@ public class ExchangeRateImportService {
   @Transactional
   @CacheEvict(cacheNames = CacheConfig.EXCHANGE_RATES_CACHE, allEntries = true)
   public ExchangeRateImportResult importLatestExchangeRates() {
+    var seriesToImport = getAllEnabledSeries();
+    return importExchangeRatesForSeries(seriesToImport);
+  }
+
+  /**
+   * Gets all enabled currency series for import.
+   *
+   * @return List of all enabled currency series
+   */
+  private List<CurrencySeries> getAllEnabledSeries() {
+    var enabledCurrencies = currencySeriesRepository.findByEnabledTrue();
+    log.info("Found {} enabled currency series for import", enabledCurrencies.size());
+
+    return enabledCurrencies;
+  }
+
+  /**
+   * Gets only the enabled currency series that are missing exchange rate data.
+   *
+   * @return List of enabled currency series with no existing exchange rates
+   */
+  private List<CurrencySeries> getSeriesWithMissingData() {
     var enabledCurrencies = currencySeriesRepository.findByEnabledTrue();
 
-    if (enabledCurrencies.isEmpty()) {
-      log.warn("No enabled currency series found - skipping import");
+    return enabledCurrencies.stream()
+        .filter(
+            series -> {
+              if (!hasExchangeRateData(series)) {
+                log.info(
+                    "Currency series {} is missing exchange rate data - importing",
+                    series.getCurrencyCode());
+                return true;
+              } else {
+                log.info(
+                    "Currency series {} already has exchange rate data - skipping",
+                    series.getCurrencyCode());
+                return false;
+              }
+            })
+        .toList();
+  }
+
+  /**
+   * Imports exchange rates for a list of currency series.
+   *
+   * <p>This method handles the common import logic for both missing data and latest exchange rate
+   * imports. It iterates through the provided series, imports exchange rates for each, and
+   * aggregates the results.
+   *
+   * @param seriesToImport List of currency series to import exchange rates for
+   * @return Combined import result with counts of new, updated, and skipped rates
+   */
+  private ExchangeRateImportResult importExchangeRatesForSeries(
+      List<CurrencySeries> seriesToImport) {
+    if (seriesToImport.isEmpty()) {
+      log.warn("No currency series to import - skipping");
       return new ExchangeRateImportResult(0, 0, 0, null, null);
     }
-
-    log.info("Found {} enabled currency series for import", enabledCurrencies.size());
 
     var totalNew = 0;
     var totalUpdated = 0;
@@ -105,7 +157,7 @@ public class ExchangeRateImportService {
     LocalDate earliestDate = null;
     LocalDate latestDate = null;
 
-    for (var currencySeries : enabledCurrencies) {
+    for (var currencySeries : seriesToImport) {
       var targetCurrency = Currency.getInstance(currencySeries.getCurrencyCode());
       var startDate = determineStartDate(targetCurrency);
       var result = importExchangeRates(currencySeries, startDate);
@@ -128,8 +180,7 @@ public class ExchangeRateImportService {
     }
 
     log.info(
-        "Import complete for all currencies: {} new, {} updated, {} skipped, earliest date: {},"
-            + " latest date: {}",
+        "Import complete: {} new, {} updated, {} skipped, earliest date: {}, latest date: {}",
         totalNew,
         totalUpdated,
         totalSkipped,
@@ -228,7 +279,9 @@ public class ExchangeRateImportService {
 
     if (mostRecent.isEmpty()) {
       // Edge case 1: No data exists - import everything
-      log.info("No existing exchange rates found - importing full history");
+      log.info(
+          "No existing exchange rates found for currency code: {} - importing full history",
+          targetCurrency.getCurrencyCode());
       return null;
     }
 
@@ -239,6 +292,16 @@ public class ExchangeRateImportService {
     log.info("Last exchange rate date: {}, starting import from: {}", lastDate, nextDate);
 
     return nextDate;
+  }
+
+  /**
+   * Checks if a specific currency series has exchange rate data in the database.
+   *
+   * @param currencySeries The currency series to check
+   * @return true if the currency series has at least one exchange rate, false otherwise
+   */
+  private boolean hasExchangeRateData(CurrencySeries currencySeries) {
+    return exchangeRateRepository.countByCurrencySeries(currencySeries) > 0;
   }
 
   /**

@@ -58,7 +58,6 @@ public class ExchangeRateImportService {
   }
 
   /**
-<<<<<<< HEAD
    * Imports exchange rates only for enabled currency series that are missing data. Called at
    * startup by CurrencyServiceStartupConfig.
    *
@@ -78,26 +77,6 @@ public class ExchangeRateImportService {
 
     var seriesToImport = getSeriesWithMissingData();
     return importExchangeRatesForSeries(seriesToImport);
-=======
-   * Checks if all enabled currency series have exchange rate data in the database.
-   *
-   * @return true if all enabled currency series have at least one exchange rate, false otherwise
-   */
-  public boolean hasEnabledExchangeRateData() {
-    var enabledSeries = currencySeriesRepository.findByEnabledTrue();
-
-    if (enabledSeries.isEmpty()) {
-      return false;
-    }
-
-    for (var series : enabledSeries) {
-      if (exchangeRateRepository.countByCurrencySeries(series) == 0) {
-        return false;
-      }
-    }
-
-    return true;
->>>>>>> main
   }
 
   /**

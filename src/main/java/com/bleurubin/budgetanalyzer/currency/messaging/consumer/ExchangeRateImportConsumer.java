@@ -4,11 +4,13 @@ import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.bleurubin.budgetanalyzer.currency.messaging.message.CurrencyCreatedMessage;
 import com.bleurubin.budgetanalyzer.currency.service.ExchangeRateImportService;
+import com.bleurubin.service.http.CorrelationIdFilter;
 
 /**
  * Consumer for currency-related messages.
@@ -32,11 +34,18 @@ public class ExchangeRateImportConsumer {
    * <p>Bean name "importExchangeRates" creates binding "importExchangeRates-in-0". Errors are
    * logged but not thrown - Spring Cloud Stream will retry via RabbitMQ.
    *
+   * <p>Uses MDC (Mapped Diagnostic Context) for distributed tracing - all log statements within
+   * this consumer will automatically include the correlation ID and event type.
+   *
    * @return Consumer function processing CurrencyCreatedMessage
    */
   @Bean
   public Consumer<CurrencyCreatedMessage> importExchangeRates() {
     return message -> {
+      // Set correlation ID and event type in MDC for distributed tracing
+      MDC.put(CorrelationIdFilter.CORRELATION_ID_MDC_KEY, message.correlationId());
+      MDC.put("eventType", "currency_created");
+
       try {
         log.info(
             "Received currency created message: currencySeriesId={}, currencyCode={}",
@@ -58,6 +67,9 @@ public class ExchangeRateImportConsumer {
             message.currencySeriesId(),
             e);
         // Don't throw - let Spring Cloud Stream retry mechanism handle it
+      } finally {
+        // Clean up MDC to prevent memory leaks in thread pool
+        MDC.clear();
       }
     };
   }

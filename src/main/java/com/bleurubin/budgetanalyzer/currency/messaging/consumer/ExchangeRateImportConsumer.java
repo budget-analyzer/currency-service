@@ -31,18 +31,20 @@ public class ExchangeRateImportConsumer {
   /**
    * Consumer function for currency created messages.
    *
-   * <p>Bean name "importExchangeRates" creates binding "importExchangeRates-in-0". Errors are
-   * logged but not thrown - Spring Cloud Stream will retry via RabbitMQ.
+   * <p>Bean name "importExchangeRates" creates binding "importExchangeRates-in-0".
    *
-   * <p>Uses MDC (Mapped Diagnostic Context) for distributed tracing - all log statements within
-   * this consumer will automatically include the correlation ID and event type.
+   * <p><b>Error Handling:</b> Exceptions are allowed to propagate to Spring Cloud Stream's retry
+   * mechanism. After exhausting retries (configured in application.yml), failed messages are sent
+   * to the Dead Letter Queue.
+   *
+   * <p><b>Distributed Tracing:</b> Uses MDC (Mapped Diagnostic Context) - all log statements within
+   * this consumer automatically include correlation ID and event type.
    *
    * @return Consumer function processing CurrencyCreatedMessage
    */
   @Bean
   public Consumer<CurrencyCreatedMessage> importExchangeRates() {
     return message -> {
-      // Set correlation ID and event type in MDC for distributed tracing
       MDC.put(CorrelationIdFilter.CORRELATION_ID_MDC_KEY, message.correlationId());
       MDC.put("eventType", "currency_created");
 
@@ -61,14 +63,7 @@ public class ExchangeRateImportConsumer {
             result.newRecords(),
             result.updatedRecords(),
             result.skippedRecords());
-      } catch (Exception e) {
-        log.error(
-            "Failed to import exchange rates for currency series: {}",
-            message.currencySeriesId(),
-            e);
-        // Don't throw - let Spring Cloud Stream retry mechanism handle it
       } finally {
-        // Clean up MDC to prevent memory leaks in thread pool
         MDC.clear();
       }
     };

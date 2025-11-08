@@ -402,12 +402,75 @@ public void create(Currency currency) {
                try {
                    service.importExchangeRatesForSeries(message.currencySeriesId());
                } finally {
-                   MDC.clear();
+                   MDC.clear();  // Always clean up MDC
                }
+               // Exceptions propagate to Spring Cloud Stream retry mechanism
            };
        }
    }
    ```
+
+**CRITICAL: Message Consumer Error Handling**
+
+Message consumers **MUST NOT** catch and swallow exceptions. Spring Cloud Stream's retry and DLQ mechanisms depend on exceptions propagating from the consumer.
+
+**WRONG - Breaks retry mechanism:**
+```java
+@Bean
+public Consumer<CurrencyCreatedMessage> importExchangeRates() {
+    return message -> {
+        try {
+            service.importExchangeRatesForSeries(message.currencySeriesId());
+        } catch (Exception e) {
+            log.error("Failed to import", e);
+            // ❌ Exception swallowed - Spring Cloud Stream thinks it succeeded!
+            // Result: No retry, message acknowledged and removed from queue
+        }
+    };
+}
+```
+
+**CORRECT - Allows retry mechanism:**
+```java
+@Bean
+public Consumer<CurrencyCreatedMessage> importExchangeRates() {
+    return message -> {
+        MDC.put("correlationId", message.correlationId());
+        try {
+            service.importExchangeRatesForSeries(message.currencySeriesId());
+        } finally {
+            MDC.clear();  // ✅ Always clean up MDC, even on exception
+        }
+        // ✅ Exception propagates naturally to Spring Cloud Stream
+    };
+}
+```
+
+**How Spring Cloud Stream Retry Works:**
+
+1. **Success**: Consumer returns normally → Message acknowledged, removed from queue
+2. **Failure**: Consumer throws exception → Spring Cloud Stream retry logic triggers
+3. **After max retries**: Message published to Dead Letter Queue (DLQ) for manual investigation
+
+**Retry Configuration** (application.yml):
+```yaml
+spring.cloud.stream.rabbit.bindings.importExchangeRates-in-0.consumer:
+  max-attempts: 3              # 1 initial + 2 retries
+  initial-interval: 1000       # 1 second initial delay
+  multiplier: 2.0              # Exponential backoff (1s, 2s, 4s)
+  auto-bind-dlq: true          # Create DLQ automatically
+  republish-to-dlq: true       # Preserve original message in DLQ
+```
+
+**Why the `finally` block?**
+
+The `finally` block ensures MDC is cleaned up even when exceptions are thrown. Without it, MDC values would leak across messages in the thread pool (Spring Cloud Stream reuses threads).
+
+**Key Points:**
+- Use `finally` for cleanup (MDC, resources) - it always executes
+- Never use `catch` unless rethrowing the exception
+- Let exceptions propagate naturally to Spring Cloud Stream
+- Spring Cloud Stream handles retry, backoff, and DLQ automatically
 
 **Event Flow with Transactional Outbox:**
 

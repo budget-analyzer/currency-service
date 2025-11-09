@@ -58,9 +58,28 @@ public class CacheConfig {
   /**
    * Configures Redis cache manager with custom settings for each cache.
    *
-   * <p>Exchange rates cache: - TTL: None (rates only change during imports) - Serialization: JSON
-   * for human-readable debugging - Key prefix: "currency-service:" for namespace isolation - Cache
-   * invalidation: Explicit via @CacheEvict on import
+   * <p><b>Exchange Rates Cache Configuration:</b>
+   *
+   * <ul>
+   *   <li><b>TTL:</b> None (Duration.ZERO = infinite) - Exchange rates only change during imports,
+   *       so time-based expiration is unnecessary. Cache is explicitly evicted via
+   *       {@code @CacheEvict} when rates are imported.
+   *   <li><b>Eviction Strategy:</b> Manual only - All import operations use
+   *       {@code @CacheEvict(allEntries = true)} to clear the entire cache. This trades targeted
+   *       eviction complexity for simplicity and consistency guarantees.
+   *   <li><b>Key Structure:</b> {@code
+   *       currency-service:exchangeRates::{currencyCode}:{startDate}:{endDate}} - Enables
+   *       currency-specific cache isolation (THB queries don't collide with EUR queries)
+   *   <li><b>Serialization:</b> JSON (GenericJackson2JsonRedisSerializer) for human-readable
+   *       debugging and cross-language compatibility
+   *   <li><b>Namespace:</b> "currency-service:" prefix prevents key collisions with other
+   *       microservices sharing the same Redis instance
+   * </ul>
+   *
+   * <p><b>Multi-Currency Considerations:</b> While the cache key includes currency code for
+   * isolation, eviction is global (all currencies evicted simultaneously). This design choice
+   * prioritizes simplicity over per-currency optimization, which is acceptable given infrequent
+   * import operations (once per day).
    *
    * @param redisSerializer configured serializer with type information
    * @return customizer for RedisCacheManager

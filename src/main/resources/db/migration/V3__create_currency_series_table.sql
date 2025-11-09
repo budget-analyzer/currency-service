@@ -47,7 +47,3 @@ COMMENT ON COLUMN currency_series.provider_series_id IS 'Exchange rate provider 
 COMMENT ON COLUMN currency_series.enabled IS 'Whether this currency is actively supported for exchange rate imports';
 COMMENT ON COLUMN currency_series.created_at IS 'Record creation timestamp';
 COMMENT ON COLUMN currency_series.updated_at IS 'Record last modification timestamp';
-
--- Insert initial currency data (Thai Baht - currently the only supported currency)
-INSERT INTO currency_series (currency_code, provider_series_id, enabled, created_at, updated_at)
-VALUES ('THB', 'DEXTHUS', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

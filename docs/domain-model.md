@@ -135,7 +135,7 @@ CurrencySeries 1 ──→ * ExchangeRate
 ### FRED Provider
 
 **Pattern:** Provider abstraction
-- See: [@service-common/docs/advanced-patterns.md](../../service-common/docs/advanced-patterns.md#provider-abstraction-pattern)
+- See: [@service-common/docs/advanced-patterns.md](https://github.com/budget-analyzer/service-common/blob/main/docs/advanced-patterns.md#provider-abstraction-pattern)
 
 **Interface:** `ExchangeRateProvider`
 
@@ -172,7 +172,7 @@ CurrencySeries 1 ──→ * ExchangeRate
 ## Caching Strategy
 
 **Pattern:** Cache-aside with Redis
-- See: [@service-common/docs/advanced-patterns.md](../../service-common/docs/advanced-patterns.md#redis-distributed-caching)
+- See: [@service-common/docs/advanced-patterns.md](https://github.com/budget-analyzer/service-common/blob/main/docs/advanced-patterns.md#redis-distributed-caching)
 
 **Cached Data:**
 - Recent exchange rates (last 90 days)
@@ -190,7 +190,7 @@ CurrencySeries 1 ──→ * ExchangeRate
 ## Scheduled Operations
 
 **Pattern:** ShedLock for distributed coordination
-- See: [@service-common/docs/advanced-patterns.md](../../service-common/docs/advanced-patterns.md#shedlock-distributed-locking)
+- See: [@service-common/docs/advanced-patterns.md](https://github.com/budget-analyzer/service-common/blob/main/docs/advanced-patterns.md#shedlock-distributed-locking)
 
 **Jobs:**
 1. **Daily Import** - 6:00 AM UTC
@@ -242,5 +242,5 @@ grep -r "@Scheduled" src/main/java
 
 - **Database Schema:** [database-schema.md](database-schema.md)
 - **API Spec:** [api/README.md](api/README.md)
-- **Advanced Patterns:** [@service-common/docs/advanced-patterns.md](../../service-common/docs/advanced-patterns.md)
+- **Advanced Patterns:** [@service-common/docs/advanced-patterns.md](https://github.com/budget-analyzer/service-common/blob/main/docs/advanced-patterns.md)
 - **FRED Integration:** [fred-integration.md](fred-integration.md) (future)

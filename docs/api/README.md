@@ -204,7 +204,7 @@ Response: CacheClearResponse
 - `503 Service Unavailable` - External provider unavailable
 
 **Error Response Format:**
-See: [@service-common/docs/error-handling.md](../../../service-common/docs/error-handling.md)
+See: [@service-common/docs/error-handling.md](https://github.com/budget-analyzer/service-common/blob/main/docs/error-handling.md)
 
 ## Authentication & Authorization
 
@@ -306,4 +306,4 @@ docker exec redis redis-cli KEYS "exchange-rates:*"
 - **OpenAPI Spec:** http://localhost:8084/v3/api-docs
 - **Domain Model:** [../domain-model.md](../domain-model.md)
 - **Database Schema:** [../database-schema.md](../database-schema.md)
-- **Advanced Patterns:** [@service-common/docs/advanced-patterns.md](../../../service-common/docs/advanced-patterns.md)
+- **Advanced Patterns:** [@service-common/docs/advanced-patterns.md](https://github.com/budget-analyzer/service-common/blob/main/docs/advanced-patterns.md)

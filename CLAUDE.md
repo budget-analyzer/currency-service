@@ -16,7 +16,7 @@ Manages currencies and exchange rates for the Budget Analyzer application with a
 
 **This service follows standard Budget Analyzer Spring Boot conventions.**
 
-See [@service-common/CLAUDE.md](../service-common/CLAUDE.md) and [@service-common/docs/](../service-common/docs/) for:
+See [@service-common/CLAUDE.md](https://github.com/budget-analyzer/service-common/blob/main/CLAUDE.md) and [@service-common/docs/](https://github.com/budget-analyzer/service-common/tree/main/docs) for:
 - Architecture layers (Controller → Service → Repository)
 - Naming conventions (`*Controller`, `*Service`, `*ServiceImpl`, `*Repository`)
 - Testing patterns (JUnit 5, TestContainers)
@@ -30,7 +30,7 @@ See [@service-common/CLAUDE.md](../service-common/CLAUDE.md) and [@service-commo
 
 **This service implements ALL advanced patterns documented in service-common.**
 
-See [@service-common/docs/advanced-patterns.md](../service-common/docs/advanced-patterns.md) for detailed documentation on:
+See [@service-common/docs/advanced-patterns.md](https://github.com/budget-analyzer/service-common/blob/main/docs/advanced-patterns.md) for detailed documentation on:
 - **Provider Abstraction Pattern**: FRED API integration via `ExchangeRateProvider` interface
 - **Event-Driven Messaging**: Spring Modulith transactional outbox for guaranteed message delivery
 - **Redis Distributed Caching**: High-performance caching for exchange rate queries
@@ -67,7 +67,7 @@ currency-service:
 
 **Important:** Provider-specific logic is encapsulated in `FredExchangeRateProvider`. Service layer only depends on `ExchangeRateProvider` interface, allowing future providers (ECB, Bloomberg) without service changes.
 
-See [@service-common/docs/advanced-patterns.md#provider-abstraction-pattern](../service-common/docs/advanced-patterns.md#provider-abstraction-pattern)
+See [@service-common/docs/advanced-patterns.md#provider-abstraction-pattern](https://github.com/budget-analyzer/service-common/blob/main/docs/advanced-patterns.md#provider-abstraction-pattern)
 
 ### Scheduled Exchange Rate Import
 
@@ -88,7 +88,7 @@ cat src/main/resources/application.yml | grep -A 5 "shedlock"
 - `lockAtMostFor: 15m` - Safety timeout (import takes ~30 seconds)
 - `lockAtLeastFor: 1m` - Prevents rapid re-execution
 
-See [@service-common/docs/advanced-patterns.md#distributed-locking-with-shedlock](../service-common/docs/advanced-patterns.md#distributed-locking-with-shedlock)
+See [@service-common/docs/advanced-patterns.md#distributed-locking-with-shedlock](https://github.com/budget-analyzer/service-common/blob/main/docs/advanced-patterns.md#distributed-locking-with-shedlock)
 
 ### Exchange Rate Caching
 
@@ -113,7 +113,7 @@ grep -r "@Cacheable\|@CacheEvict" src/main/java/*/service/
 - `@CacheEvict(allEntries = true)` on import - Clears all cache after new data imported
 - Key format: `{targetCurrency}:{startDate}:{endDate}`
 
-See [@service-common/docs/advanced-patterns.md#redis-distributed-caching](../service-common/docs/advanced-patterns.md#redis-distributed-caching)
+See [@service-common/docs/advanced-patterns.md#redis-distributed-caching](https://github.com/budget-analyzer/service-common/blob/main/docs/advanced-patterns.md#redis-distributed-caching)
 
 ### Event-Driven Architecture
 
@@ -142,7 +142,7 @@ cat src/main/java/org/budgetanalyzer/currency/messaging/consumer/ExchangeRateImp
 - Async HTTP responses (fast API response times)
 - Automatic retries with Spring Modulith
 
-See [@service-common/docs/advanced-patterns.md#event-driven-messaging-with-transactional-outbox](../service-common/docs/advanced-patterns.md#event-driven-messaging-with-transactional-outbox)
+See [@service-common/docs/advanced-patterns.md#event-driven-messaging-with-transactional-outbox](https://github.com/budget-analyzer/service-common/blob/main/docs/advanced-patterns.md#event-driven-messaging-with-transactional-outbox)
 
 ### Domain Model
 
@@ -164,7 +164,7 @@ cat src/main/java/org/budgetanalyzer/currency/domain/ExchangeRate.java
 
 ### Package Structure
 
-**Standard Spring Boot layered architecture** - See [@service-common/CLAUDE.md](../service-common/CLAUDE.md)
+**Standard Spring Boot layered architecture** - See [@service-common/CLAUDE.md](https://github.com/budget-analyzer/service-common/blob/main/CLAUDE.md)
 
 **Service-specific packages:**
 - `client/fred/` - FRED API integration
@@ -282,7 +282,7 @@ cd ../currency-service
 
 ## Testing
 
-See [@service-common/docs/testing-patterns.md](../service-common/docs/testing-patterns.md) for testing conventions.
+See [@service-common/docs/testing-patterns.md](https://github.com/budget-analyzer/service-common/blob/main/docs/testing-patterns.md) for testing conventions.
 
 **Current state**: Limited coverage, opportunity for improvement (provider abstraction, caching, messaging, scheduling)
 
@@ -300,7 +300,7 @@ cat src/main/resources/application.yml | grep '\${' | sort -u
 
 ## Notes for Claude Code
 
-**General guidance**: See [@service-common/CLAUDE.md](../service-common/CLAUDE.md) for code quality standards and build commands.
+**General guidance**: See [@service-common/CLAUDE.md](https://github.com/budget-analyzer/service-common/blob/main/CLAUDE.md) for code quality standards and build commands.
 
 **Service-specific reminders**:
 - Service layer uses `ExchangeRateProvider` interface, NEVER references FRED directly

@@ -146,66 +146,46 @@ See [@service-common/docs/advanced-patterns.md#event-driven-messaging-with-trans
 
 ### Domain Model
 
-**CurrencySeries Entity:**
+See [docs/domain-model.md](docs/domain-model.md) for detailed entity relationships and business rules.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| id | Long | Yes | Primary key |
-| currencyCode | String | Yes | ISO 4217 currency code |
-| providerSeriesId | String | Yes | External provider series ID (e.g., FRED series) |
-| createdAt | Instant | Inherited | Audit timestamp |
-| updatedAt | Instant | Inherited | Audit timestamp |
+**Key Concepts:**
+- **CurrencySeries**: Represents exchange rate time series from external providers (ISO 4217 codes)
+- **ExchangeRate**: Individual rate observations for a series (date + rate value)
 
-**ExchangeRate Entity:**
+**Discovery:**
+```bash
+# Find all entities
+find src/main/java -type f -path "*/domain/*.java" | grep -v event
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| id | Long | Yes | Primary key |
-| targetCurrency | CurrencySeries | Yes | Foreign key to currency series |
-| date | LocalDate | Yes | Exchange rate date |
-| rate | BigDecimal | Yes | Exchange rate value |
-| createdAt | Instant | Inherited | Audit timestamp |
-| updatedAt | Instant | Inherited | Audit timestamp |
-
-See [@src/main/java/org/budgetanalyzer/currency/domain/](src/main/java/org/budgetanalyzer/currency/domain/)
+# View entity structure
+cat src/main/java/org/budgetanalyzer/currency/domain/CurrencySeries.java
+cat src/main/java/org/budgetanalyzer/currency/domain/ExchangeRate.java
+```
 
 ### Package Structure
 
-```
-org.budgetanalyzer.currency/
-├── api/                  # REST controllers and API DTOs
-├── domain/              # JPA entities and domain events
-│   └── event/          # Domain events (CurrencyCreatedEvent)
-├── service/             # Business logic
-│   ├── dto/            # Internal service DTOs
-│   └── provider/       # Provider abstraction
-├── repository/          # Data access layer
-├── client/             # External API clients
-│   └── fred/          # FRED API client
-├── config/             # Spring configuration
-├── scheduler/          # Scheduled background tasks
-└── messaging/          # Event-driven messaging
-    ├── message/       # External message payloads
-    ├── publisher/     # Message publishers (StreamBridge wrappers)
-    ├── listener/      # Event listeners (domain → external)
-    └── consumer/      # Message consumers (functional beans)
+**Standard Spring Boot layered architecture** - See [@service-common/CLAUDE.md](../service-common/CLAUDE.md)
+
+**Service-specific packages:**
+- `client/fred/` - FRED API integration
+- `scheduler/` - Background import jobs
+- `messaging/` - Event-driven messaging (listener, consumer, publisher)
+- `service/provider/` - Provider abstraction interface
+
+**Discovery:**
+```bash
+# View full package structure
+tree src/main/java/org/budgetanalyzer/currency -L 2
+
+# Or without tree command
+find src/main/java/org/budgetanalyzer/currency -type d | sort
 ```
 
-**Package Dependency Rules:**
-```
-api → service (NEVER repository)
-service → repository, domain, provider
-service → ApplicationEventPublisher (publishes domain events)
-messaging/listener → domain/event, messaging/publisher
-messaging/consumer → service (delegates to services)
-service/provider → client (provider implementations use clients)
-```
-
-**Critical Boundaries:**
-- Controllers NEVER import repositories
-- Consumers NEVER import repositories (use services)
-- Service layer NEVER imports message publishers (uses domain events)
-- Service layer NEVER references FRED (uses provider interface)
+**Critical Architecture Rules:**
+- Controllers NEVER import repositories (use services)
+- Consumers NEVER import repositories (delegate to services)
+- Service layer NEVER imports message publishers (publishes domain events instead)
+- Service layer NEVER references FRED directly (uses `ExchangeRateProvider` interface)
 
 ## API Documentation
 
@@ -300,126 +280,31 @@ cd ../currency-service
 ./gradlew clean build
 ```
 
-## Testing Strategy
-
-**Current State:**
-- Limited test coverage - opportunity for improvement
-- Basic smoke test exists
-
-**Test Framework:**
-- JUnit 5 (Jupiter)
-- Spring Boot Test (`@SpringBootTest`, `@DataJpaTest`, `@WebMvcTest`)
-
-**Priority Testing Needs:**
-1. Controller layer tests with MockMvc
-2. Service layer tests with mocked repositories
-3. Provider abstraction tests with mock FRED client
-4. Event-driven messaging tests (domain events → external messages)
-5. Caching behavior verification
-6. Scheduled task execution tests
-
-**Future:** Migrate to TestContainers for PostgreSQL/Redis integration tests
+## Testing
 
 See [@service-common/docs/testing-patterns.md](../service-common/docs/testing-patterns.md) for testing conventions.
 
+**Current state**: Limited coverage, opportunity for improvement (provider abstraction, caching, messaging, scheduling)
+
 ## Deployment
 
-### Environment Variables
+**Environment variables**: Standard Spring Boot + PostgreSQL + Redis + `FRED_API_KEY` (required)
 
-**Application:**
-- `SPRING_PROFILES_ACTIVE`: Active Spring profile
+**Health checks**: `/actuator/health/readiness`, `/actuator/health/liveness`
 
-**Database:**
-- `POSTGRES_HOST`: Database host
-- `POSTGRES_PORT`: Database port
-- `POSTGRES_DB`: Database name
-- `POSTGRES_USER`: Database username
-- `POSTGRES_PASSWORD`: Database password
+**Discovery:**
+```bash
+# View all env vars
+cat src/main/resources/application.yml | grep '\${' | sort -u
+```
 
-**Cache:**
-- `REDIS_HOST`: Redis host (default: localhost)
-- `REDIS_PORT`: Redis port (default: 6379)
-- `REDIS_PASSWORD`: Redis password (optional)
+## Notes for Claude Code
 
-**External APIs:**
-- `FRED_API_KEY`: FRED API authentication key (required)
+**General guidance**: See [@service-common/CLAUDE.md](../service-common/CLAUDE.md) for code quality standards and build commands.
 
-### Health Checks
-
-- Readiness: `/actuator/health/readiness`
-- Liveness: `/actuator/health/liveness`
-
-## Future Enhancements
-
-### High Priority
-- [ ] **Comprehensive integration tests** - TestContainers for PostgreSQL/Redis
-- [ ] **WireMock for FRED API tests** - Mock external API responses
-- [ ] **PostgreSQL partial indexes** - Optimize event_publication table queries
-- [ ] **Additional exchange rate providers** - ECB, Bloomberg (via provider abstraction)
-
-### Medium Priority
-- [ ] **Prometheus metrics setup** - Complete endpoint exposure and custom metrics
-- [ ] **Distributed tracing** - Zipkin/Jaeger integration
-- [ ] **MapStruct for DTO mapping** - Replace manual mapping
-- [ ] **Audit logging** - Track data changes with JPA entity listeners
-
-### Low Priority
-- [ ] **GraphQL endpoint** - Alternative to REST API
-- [ ] **API rate limiting** - Request throttling (may be at gateway level)
-
-See [@service-common/docs/advanced-patterns.md](../service-common/docs/advanced-patterns.md) for implementation guidance.
-
-## AI Assistant Guidelines
-
-When working on this service:
-
-### Critical Rules
-
-1. **NEVER implement changes without explicit permission** - Always present a plan and wait for approval
-2. **Distinguish between statements and requests** - "I did X" is informational, not a request
-3. **Questions deserve answers first** - Provide information before implementing
-4. **Wait for explicit action language** - Only implement when user says "do it", "implement", etc.
-5. **Limit file access** - Stay within currency-service directory
-
-### Code Quality
-
-- **Production-quality only** - No shortcuts or workarounds
-- **Follow service layer architecture** - Services accept/return entities, not API DTOs
-- **Pure JPA only** - No Hibernate-specific imports
-- **Controllers NEVER import repositories** - All database access via services
-- **Consumers NEVER import repositories** - All database access via services
-- **Always run before committing:**
-  1. `./gradlew clean spotlessApply`
-  2. `./gradlew clean build`
-
-### Checkstyle Warnings
-
-- **Read build output carefully** - Check for warnings even if build succeeds
-- **Fix all Checkstyle warnings** - Treat as errors
-- **Common issues**: Missing Javadoc periods, wildcard imports, line length
-- **If unable to fix**: Document warning details and notify user
-
-### Architecture
-
-- **Controllers**: Thin, HTTP-focused, delegate to services
-- **Services**: Business logic, validation, transactions
-- **Repositories**: Data access only, used by services only
-- **Domain events**: Published by services, handled by listeners
-- **Message consumers**: Functional beans that delegate to services
-- **Provider abstraction**: Service layer uses interface, never concrete implementation
-
-### Advanced Patterns
-
-- **Provider abstraction**: NEVER reference FRED in service layer, use `ExchangeRateProvider` interface
-- **Event-driven**: Services publish domain events, listeners bridge to external messages
-- **Consumer error handling**: NEVER swallow exceptions, let them propagate for retry
-- **Caching**: Use `@Cacheable` for queries, `@CacheEvict` for updates
-- **Distributed locking**: Use `@SchedulerLock` for scheduled tasks in multi-pod deployment
-
-### Documentation
-
-- **Update CLAUDE.md** when architecture changes
-- **Add JavaDoc** with proper punctuation (period at end of first sentence)
-- **Document provider integrations** in comments
-- **Keep OpenAPI annotations current**
-- **Update advanced-patterns.md** if patterns evolve (affects all services)
+**Service-specific reminders**:
+- Service layer uses `ExchangeRateProvider` interface, NEVER references FRED directly
+- Consumers delegate to services, NEVER import repositories
+- Services publish domain events, listeners bridge to external messages
+- Use `@Cacheable` for queries, `@CacheEvict(allEntries=true)` after imports
+- Use `@SchedulerLock` for scheduled tasks (multi-pod coordination)

@@ -40,6 +40,9 @@ public final class TestConstants {
   /** Valid currency code: US Dollar (base currency). */
   public static final String VALID_CURRENCY_USD = "USD";
 
+  /** Valid currency code: South African Rand (used for testing queries with no data). */
+  public static final String VALID_CURRENCY_ZAR_NOT_IN_DB = "ZAR";
+
   // ===========================================================================================
   // Invalid Currency Codes (for validation testing)
   // ===========================================================================================
@@ -102,6 +105,34 @@ public final class TestConstants {
 
   /** Base currency: US Dollar. All exchange rates in this service use USD as base. */
   public static final Currency BASE_CURRENCY_USD = Currency.getInstance("USD");
+
+  // ===========================================================================================
+  // Currency Instances (for repository tests)
+  // ===========================================================================================
+
+  /** Currency instance: Euro. */
+  public static final Currency CURRENCY_EUR = Currency.getInstance(VALID_CURRENCY_EUR);
+
+  /** Currency instance: Thai Baht. */
+  public static final Currency CURRENCY_THB = Currency.getInstance(VALID_CURRENCY_THB);
+
+  /** Currency instance: British Pound Sterling. */
+  public static final Currency CURRENCY_GBP = Currency.getInstance(VALID_CURRENCY_GBP);
+
+  /** Currency instance: Japanese Yen. */
+  public static final Currency CURRENCY_JPY = Currency.getInstance(VALID_CURRENCY_JPY);
+
+  /** Currency instance: Canadian Dollar. */
+  public static final Currency CURRENCY_CAD = Currency.getInstance(VALID_CURRENCY_CAD);
+
+  /** Currency instance: Australian Dollar. */
+  public static final Currency CURRENCY_AUD = Currency.getInstance(VALID_CURRENCY_AUD);
+
+  /** Currency instance: Swiss Franc. */
+  public static final Currency CURRENCY_CHF = Currency.getInstance(VALID_CURRENCY_CHF);
+
+  /** Currency instance: South African Rand (used for testing queries with no data). */
+  public static final Currency CURRENCY_ZAR = Currency.getInstance(VALID_CURRENCY_ZAR_NOT_IN_DB);
 
   // ===========================================================================================
   // Test Dates

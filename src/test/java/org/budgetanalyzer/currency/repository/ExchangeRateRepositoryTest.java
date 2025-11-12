@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Currency;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -76,8 +75,7 @@ class ExchangeRateRepositoryTest extends AbstractRepositoryTest {
     // Act
     var mostRecent =
         exchangeRateRepository.findTopByBaseCurrencyAndTargetCurrencyOrderByDateDesc(
-            TestConstants.BASE_CURRENCY_USD,
-            Currency.getInstance(TestConstants.VALID_CURRENCY_EUR));
+            TestConstants.BASE_CURRENCY_USD, TestConstants.CURRENCY_EUR);
 
     // Assert: Should return rate from 2024-01-15 (most recent)
     assertThat(mostRecent)
@@ -94,11 +92,10 @@ class ExchangeRateRepositoryTest extends AbstractRepositoryTest {
   @DisplayName(
       "findTopByBaseCurrencyAndTargetCurrencyOrderByDateDesc() should return empty when no data")
   void findTopByBaseCurrencyAndTargetCurrencyOrderByDateDescWithNoDataReturnsEmpty() {
-    // Act: Query for non-existent currency pair
+    // Act: Query for currency pair with no data
     var result =
         exchangeRateRepository.findTopByBaseCurrencyAndTargetCurrencyOrderByDateDesc(
-            TestConstants.BASE_CURRENCY_USD,
-            Currency.getInstance(TestConstants.INVALID_CURRENCY_NON_EXISTENT));
+            TestConstants.BASE_CURRENCY_USD, TestConstants.CURRENCY_ZAR);
 
     // Assert
     assertThat(result).isEmpty();
@@ -131,8 +128,7 @@ class ExchangeRateRepositoryTest extends AbstractRepositoryTest {
     // Act: Query for EUR only
     var eurResult =
         exchangeRateRepository.findTopByBaseCurrencyAndTargetCurrencyOrderByDateDesc(
-            TestConstants.BASE_CURRENCY_USD,
-            Currency.getInstance(TestConstants.VALID_CURRENCY_EUR));
+            TestConstants.BASE_CURRENCY_USD, TestConstants.CURRENCY_EUR);
 
     // Assert: Should return EUR rate, not THB (even though THB is more recent)
     assertThat(eurResult)
@@ -169,8 +165,7 @@ class ExchangeRateRepositoryTest extends AbstractRepositoryTest {
 
     // Act
     var earliestDate =
-        exchangeRateRepository.findEarliestDateByTargetCurrency(
-            Currency.getInstance(TestConstants.VALID_CURRENCY_EUR));
+        exchangeRateRepository.findEarliestDateByTargetCurrency(TestConstants.CURRENCY_EUR);
 
     // Assert: Should return 2024-01-02 (earliest date)
     assertThat(earliestDate).isPresent().contains(LocalDate.of(2024, 1, 2));
@@ -181,8 +176,7 @@ class ExchangeRateRepositoryTest extends AbstractRepositoryTest {
   void findEarliestDateByTargetCurrencyWithNoDataReturnsEmpty() {
     // Act: Query for currency with no exchange rates
     var result =
-        exchangeRateRepository.findEarliestDateByTargetCurrency(
-            Currency.getInstance(TestConstants.INVALID_CURRENCY_NON_EXISTENT));
+        exchangeRateRepository.findEarliestDateByTargetCurrency(TestConstants.CURRENCY_ZAR);
 
     // Assert
     assertThat(result).isEmpty();
@@ -213,8 +207,7 @@ class ExchangeRateRepositoryTest extends AbstractRepositoryTest {
 
     // Act
     var earliestDate =
-        exchangeRateRepository.findEarliestDateByTargetCurrency(
-            Currency.getInstance(TestConstants.VALID_CURRENCY_EUR));
+        exchangeRateRepository.findEarliestDateByTargetCurrency(TestConstants.CURRENCY_EUR);
 
     // Assert: Should return 2020-01-01 (global earliest)
     assertThat(earliestDate).isPresent().contains(LocalDate.of(2020, 1, 1));
@@ -245,8 +238,7 @@ class ExchangeRateRepositoryTest extends AbstractRepositoryTest {
 
     // Act: Query for EUR only
     var eurEarliest =
-        exchangeRateRepository.findEarliestDateByTargetCurrency(
-            Currency.getInstance(TestConstants.VALID_CURRENCY_EUR));
+        exchangeRateRepository.findEarliestDateByTargetCurrency(TestConstants.CURRENCY_EUR);
 
     // Assert: Should return EUR date, not THB (even though THB is earlier)
     assertThat(eurEarliest).isPresent().contains(LocalDate.of(2024, 1, 15));
@@ -427,9 +419,7 @@ class ExchangeRateRepositoryTest extends AbstractRepositoryTest {
     assertThat(filtered)
         .hasSize(2)
         .extracting(ExchangeRate::getTargetCurrency)
-        .containsExactlyInAnyOrder(
-            Currency.getInstance(TestConstants.VALID_CURRENCY_EUR),
-            Currency.getInstance(TestConstants.VALID_CURRENCY_THB));
+        .containsExactlyInAnyOrder(TestConstants.CURRENCY_EUR, TestConstants.CURRENCY_THB);
   }
 
   @Test
@@ -620,7 +610,7 @@ class ExchangeRateRepositoryTest extends AbstractRepositoryTest {
     // Arrange: Create exchange rate without setting currencySeries
     var rate = new ExchangeRate();
     rate.setBaseCurrency(TestConstants.BASE_CURRENCY_USD);
-    rate.setTargetCurrency(Currency.getInstance(TestConstants.VALID_CURRENCY_EUR));
+    rate.setTargetCurrency(TestConstants.CURRENCY_EUR);
     rate.setDate(LocalDate.of(2024, 1, 2));
     rate.setRate(new BigDecimal("0.8500"));
 

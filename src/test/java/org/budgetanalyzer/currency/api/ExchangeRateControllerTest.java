@@ -468,10 +468,11 @@ class ExchangeRateControllerTest extends AbstractControllerTest {
       case "GBP" -> CurrencySeriesTestBuilder.defaultGbp().build();
       case "JPY" -> CurrencySeriesTestBuilder.defaultJpy().build();
       case "CAD" -> CurrencySeriesTestBuilder.defaultCad().build();
-      default -> new CurrencySeriesTestBuilder()
-          .withCurrencyCode(currencyCode)
-          .withProviderSeriesId("DEX" + currencyCode)
-          .build();
+      default ->
+          new CurrencySeriesTestBuilder()
+              .withCurrencyCode(currencyCode)
+              .withProviderSeriesId("DEX" + currencyCode)
+              .build();
     };
   }
 }

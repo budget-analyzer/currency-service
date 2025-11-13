@@ -410,7 +410,8 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
     final var originalUpdatedAt = saved.getUpdatedAt();
 
     // Prepare request to enable
-    var requestJson = """
+    var requestJson =
+        """
         {
           "enabled": true
         }
@@ -440,7 +441,8 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
     var saved = repository.save(CurrencySeriesTestBuilder.defaultThb().enabled(true).build());
 
     // Prepare request to disable
-    var requestJson = """
+    var requestJson =
+        """
         {
           "enabled": false
         }
@@ -469,7 +471,8 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
     final var originalCreatedAt = saved.getCreatedAt();
 
     // Prepare request (only enabled can be changed)
-    var requestJson = """
+    var requestJson =
+        """
         {
           "enabled": false
         }
@@ -500,7 +503,8 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
   @Test
   @DisplayName("PUT /v1/admin/currencies/{id} - should return 404 for non-existent ID")
   void shouldReturn404WhenUpdatingNonExistentId() throws Exception {
-    var requestJson = """
+    var requestJson =
+        """
         {
           "enabled": true
         }

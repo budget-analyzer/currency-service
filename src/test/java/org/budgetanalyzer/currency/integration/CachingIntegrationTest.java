@@ -145,8 +145,7 @@ class CachingIntegrationTest extends AbstractIntegrationTest {
     assertThat(cachedValue).isNotNull();
     assertThat(cachedValue.get()).isInstanceOf(List.class);
 
-    @SuppressWarnings("unchecked")
-    var cachedResults = (List<ExchangeRateData>) cachedValue.get();
+    var cachedResults = this.<ExchangeRateData>getCachedList(cacheKey);
     assertThat(cachedResults).hasSize(5).isEqualTo(results);
   }
 
@@ -206,12 +205,10 @@ class CachingIntegrationTest extends AbstractIntegrationTest {
     assertThat(cache.get(key3)).isNotNull();
 
     // Verify each cache entry contains correct data
-    @SuppressWarnings("unchecked")
-    var cachedData1 = (List<ExchangeRateData>) cache.get(key1).get();
+    var cachedData1 = this.<ExchangeRateData>getCachedList(key1);
     assertThat(cachedData1).hasSize(5).allMatch(rate -> rate.targetCurrency().equals(thbCurrency));
 
-    @SuppressWarnings("unchecked")
-    var cachedData2 = (List<ExchangeRateData>) cache.get(key2).get();
+    var cachedData2 = this.<ExchangeRateData>getCachedList(key2);
     assertThat(cachedData2).hasSize(5).allMatch(rate -> rate.targetCurrency().equals(thbCurrency));
   }
 
@@ -284,22 +281,19 @@ class CachingIntegrationTest extends AbstractIntegrationTest {
     assertThat(cache.get(gbpKey)).isNotNull();
 
     // And: Each cache entry contains correct currency data
-    @SuppressWarnings("unchecked")
-    var cachedThb = (List<ExchangeRateData>) cache.get(thbKey).get();
+    var cachedThb = this.<ExchangeRateData>getCachedList(thbKey);
     assertThat(cachedThb)
         .hasSize(5)
         .allMatch(rate -> rate.targetCurrency().equals(thbCurrency))
         .allMatch(rate -> rate.rate().equals(TestConstants.RATE_THB_USD));
 
-    @SuppressWarnings("unchecked")
-    var cachedEur = (List<ExchangeRateData>) cache.get(eurKey).get();
+    var cachedEur = this.<ExchangeRateData>getCachedList(eurKey);
     assertThat(cachedEur)
         .hasSize(5)
         .allMatch(rate -> rate.targetCurrency().equals(eurCurrency))
         .allMatch(rate -> rate.rate().equals(TestConstants.RATE_EUR_USD));
 
-    @SuppressWarnings("unchecked")
-    var cachedGbp = (List<ExchangeRateData>) cache.get(gbpKey).get();
+    var cachedGbp = this.<ExchangeRateData>getCachedList(gbpKey);
     assertThat(cachedGbp)
         .hasSize(5)
         .allMatch(rate -> rate.targetCurrency().equals(gbpCurrency))
@@ -329,8 +323,7 @@ class CachingIntegrationTest extends AbstractIntegrationTest {
     var cache = cacheManager.getCache("exchangeRates");
     var cacheKey = thbCurrency.getCurrencyCode() + ":" + startDate + ":" + endDate;
 
-    @SuppressWarnings("unchecked")
-    var cachedResults = (List<ExchangeRateData>) cache.get(cacheKey).get();
+    var cachedResults = this.<ExchangeRateData>getCachedList(cacheKey);
 
     // Verify all fields are correctly serialized/deserialized
     assertThat(cachedResults).hasSize(5).isEqualTo(originalResults);
@@ -371,8 +364,7 @@ class CachingIntegrationTest extends AbstractIntegrationTest {
 
     assertThat(cache.get(cacheKey)).isNotNull();
 
-    @SuppressWarnings("unchecked")
-    var cachedResults = (List<ExchangeRateData>) cache.get(cacheKey).get();
+    var cachedResults = this.<ExchangeRateData>getCachedList(cacheKey);
     assertThat(cachedResults).hasSize(10).isEqualTo(results);
   }
 
@@ -398,13 +390,32 @@ class CachingIntegrationTest extends AbstractIntegrationTest {
     assertThat(cache.get(key1)).isNotNull();
     assertThat(cache.get(key2)).isNotNull();
 
-    @SuppressWarnings("unchecked")
-    var cachedResults1 = (List<ExchangeRateData>) cache.get(key1).get();
+    var cachedResults1 = this.<ExchangeRateData>getCachedList(key1);
     assertThat(cachedResults1).isEqualTo(results1);
 
-    @SuppressWarnings("unchecked")
-    var cachedResults2 = (List<ExchangeRateData>) cache.get(key2).get();
+    var cachedResults2 = this.<ExchangeRateData>getCachedList(key2);
     assertThat(cachedResults2).isEqualTo(results2);
+  }
+
+  /**
+   * Retrieves a cached list with type safety.
+   *
+   * <p>This helper method encapsulates the unchecked cast from {@code Object} to {@code List<T>}
+   * that is inherent in Spring's Cache API. The cast is safe in our test context because we control
+   * what data is cached.
+   *
+   * @param <T> the type of elements in the cached list
+   * @param cacheKey the key to retrieve from cache
+   * @return the cached list, or {@code null} if not found
+   */
+  @SuppressWarnings("unchecked")
+  private <T> List<T> getCachedList(String cacheKey) {
+    var cache = cacheManager.getCache("exchangeRates");
+    if (cache == null) {
+      return null;
+    }
+    var cachedValue = cache.get(cacheKey);
+    return cachedValue != null ? (List<T>) cachedValue.get() : null;
   }
 
   /**

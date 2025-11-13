@@ -2,7 +2,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate  # Flyway manages schema in tests too
-    show-sql: true
+    show-sql: false
 
   flyway:
     enabled: true

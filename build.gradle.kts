@@ -82,22 +82,19 @@ tasks.named("check") {
     dependsOn("spotlessCheck")
 }
 
+val jvmArgsList = listOf(
+    "--add-opens=java.base/java.nio=ALL-UNNAMED",
+    "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+    "--enable-native-access=ALL-UNNAMED"
+)
+
 tasks.withType<BootRun> {
-    jvmArgs = listOf(
-        "--add-opens=java.base/java.nio=ALL-UNNAMED",
-        "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
-        "--enable-native-access=ALL-UNNAMED"
-    )
+    jvmArgs = jvmArgsList
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
-
-    jvmArgs = listOf(
-        "--add-opens=java.base/java.nio=ALL-UNNAMED",
-        "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
-        "--enable-native-access=ALL-UNNAMED"
-    )
+    jvmArgs = jvmArgsList
 }
 
 tasks.withType<Javadoc> {

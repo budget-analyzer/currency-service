@@ -2,12 +2,6 @@ package org.budgetanalyzer.currency.service.provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.budgetanalyzer.currency.fixture.TestConstants.DATE_2024_JAN_02;
-import static org.budgetanalyzer.currency.fixture.TestConstants.DATE_2024_JAN_05;
-import static org.budgetanalyzer.currency.fixture.TestConstants.DATE_2024_JAN_06_WEEKEND;
-import static org.budgetanalyzer.currency.fixture.TestConstants.DATE_2024_JAN_07_WEEKEND;
-import static org.budgetanalyzer.currency.fixture.TestConstants.FRED_SERIES_EUR;
-import static org.budgetanalyzer.currency.fixture.TestConstants.FRED_SERIES_THB;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,6 +20,7 @@ import org.budgetanalyzer.currency.domain.CurrencySeries;
 import org.budgetanalyzer.currency.fixture.CurrencySeriesTestBuilder;
 import org.budgetanalyzer.currency.fixture.FredApiStubs;
 import org.budgetanalyzer.currency.fixture.FredApiStubs.Observation;
+import org.budgetanalyzer.currency.fixture.TestConstants;
 import org.budgetanalyzer.service.exception.ClientException;
 
 /**
@@ -96,7 +91,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should fetch full history when startDate is null")
   void shouldFetchFullHistoryWhenStartDateIsNull() {
     // Given
-    FredApiStubs.stubSuccessWithSampleData(FRED_SERIES_EUR);
+    FredApiStubs.stubSuccessWithSampleData(TestConstants.FRED_SERIES_EUR);
 
     // When
     var rates = provider.getExchangeRates(eurSeries, null);
@@ -132,7 +127,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   void shouldFetchIncrementalDataWhenStartDateProvided() {
     // Given
     var startDate = LocalDate.of(2024, 6, 1);
-    FredApiStubs.stubSuccessWithSampleData(FRED_SERIES_EUR);
+    FredApiStubs.stubSuccessWithSampleData(TestConstants.FRED_SERIES_EUR);
 
     // When
     var rates = provider.getExchangeRates(eurSeries, startDate);
@@ -156,7 +151,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
             Observation.missingData(LocalDate.of(2024, 1, 7)), // Sun - missing
             Observation.of(LocalDate.of(2024, 1, 8), "1.0823") // Mon - valid
             );
-    FredApiStubs.stubSuccessWithObservations(FRED_SERIES_EUR, observations);
+    FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When
     var rates = provider.getExchangeRates(eurSeries, null);
@@ -177,13 +172,13 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
     // Given - Custom observations with different numeric formats
     var observations =
         List.of(
-            Observation.of(DATE_2024_JAN_02, "1.0850"), // Standard
+            Observation.of(TestConstants.DATE_2024_JAN_02, "1.0850"), // Standard
             Observation.of(LocalDate.of(2024, 1, 3), "1.085"), // No trailing zero
             Observation.of(LocalDate.of(2024, 1, 4), "1.08500000"), // Extra precision
-            Observation.of(DATE_2024_JAN_05, "0.9123"), // Leading zero
+            Observation.of(TestConstants.DATE_2024_JAN_05, "0.9123"), // Leading zero
             Observation.of(LocalDate.of(2024, 1, 8), "123.456789") // Large value
             );
-    FredApiStubs.stubSuccessWithObservations(FRED_SERIES_EUR, observations);
+    FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When
     var rates = provider.getExchangeRates(eurSeries, null);
@@ -192,10 +187,10 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
     assertThat(rates).hasSize(5);
 
     // Verify specific values parsed correctly
-    assertThat(rates.get(DATE_2024_JAN_02)).isEqualByComparingTo("1.0850");
+    assertThat(rates.get(TestConstants.DATE_2024_JAN_02)).isEqualByComparingTo("1.0850");
     assertThat(rates.get(LocalDate.of(2024, 1, 3))).isEqualByComparingTo("1.085");
     assertThat(rates.get(LocalDate.of(2024, 1, 4))).isEqualByComparingTo("1.08500000");
-    assertThat(rates.get(DATE_2024_JAN_05)).isEqualByComparingTo("0.9123");
+    assertThat(rates.get(TestConstants.DATE_2024_JAN_05)).isEqualByComparingTo("0.9123");
     assertThat(rates.get(LocalDate.of(2024, 1, 8))).isEqualByComparingTo("123.456789");
   }
 
@@ -203,7 +198,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should efficiently handle large dataset with 365 observations")
   void shouldHandleLargeDatasetEfficiently() {
     // Given
-    FredApiStubs.stubSuccessWithLargeDataset(FRED_SERIES_EUR);
+    FredApiStubs.stubSuccessWithLargeDataset(TestConstants.FRED_SERIES_EUR);
 
     // When
     long startTime = System.currentTimeMillis();
@@ -223,7 +218,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should work with different currency series (THB)")
   void shouldWorkWithDifferentCurrencySeries() {
     // Given
-    FredApiStubs.stubSuccessWithSampleData(FRED_SERIES_THB);
+    FredApiStubs.stubSuccessWithSampleData(TestConstants.FRED_SERIES_THB);
 
     // When
     var rates = provider.getExchangeRates(thbSeries, null);
@@ -247,7 +242,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException when FRED returns 404 Not Found")
   void shouldThrowClientExceptionOn404NotFound() {
     // Given
-    FredApiStubs.stubNotFound(FRED_SERIES_EUR);
+    FredApiStubs.stubNotFound(TestConstants.FRED_SERIES_EUR);
 
     // When/Then
     assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))
@@ -259,7 +254,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException when FRED returns 400 Bad Request")
   void shouldThrowClientExceptionOn400BadRequest() {
     // Given
-    FredApiStubs.stubBadRequest(FRED_SERIES_EUR);
+    FredApiStubs.stubBadRequest(TestConstants.FRED_SERIES_EUR);
 
     // When/Then
     assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))
@@ -271,7 +266,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException when FRED returns 500 Server Error")
   void shouldThrowClientExceptionOn500ServerError() {
     // Given
-    FredApiStubs.stubServerError(FRED_SERIES_EUR);
+    FredApiStubs.stubServerError(TestConstants.FRED_SERIES_EUR);
 
     // When/Then
     assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))
@@ -283,7 +278,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException on timeout")
   void shouldThrowClientExceptionOnTimeout() {
     // Given
-    FredApiStubs.stubTimeout(FRED_SERIES_EUR); // 35 second delay
+    FredApiStubs.stubTimeout(TestConstants.FRED_SERIES_EUR); // 35 second delay
 
     // When/Then
     assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))
@@ -295,7 +290,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException on malformed JSON response")
   void shouldThrowClientExceptionOnMalformedJson() {
     // Given
-    FredApiStubs.stubMalformedJson(FRED_SERIES_EUR);
+    FredApiStubs.stubMalformedJson(TestConstants.FRED_SERIES_EUR);
 
     // When/Then
     assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))
@@ -306,7 +301,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException when rate limited (429)")
   void shouldThrowClientExceptionOnRateLimit() {
     // Given
-    FredApiStubs.stubRateLimited(FRED_SERIES_EUR);
+    FredApiStubs.stubRateLimited(TestConstants.FRED_SERIES_EUR);
 
     // When/Then
     assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))
@@ -322,10 +317,10 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should return true when series exists in FRED")
   void shouldReturnTrueWhenSeriesExists() {
     // Given
-    FredApiStubs.stubSeriesExistsSuccess(FRED_SERIES_EUR);
+    FredApiStubs.stubSeriesExistsSuccess(TestConstants.FRED_SERIES_EUR);
 
     // When
-    boolean exists = provider.validateSeriesExists(FRED_SERIES_EUR);
+    boolean exists = provider.validateSeriesExists(TestConstants.FRED_SERIES_EUR);
 
     // Then
     assertThat(exists).isTrue();
@@ -361,10 +356,10 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException when series validation encounters server error")
   void shouldThrowClientExceptionOnValidationServerError() {
     // Given
-    FredApiStubs.stubSeriesExistsServerError(FRED_SERIES_EUR);
+    FredApiStubs.stubSeriesExistsServerError(TestConstants.FRED_SERIES_EUR);
 
     // When/Then
-    assertThatThrownBy(() -> provider.validateSeriesExists(FRED_SERIES_EUR))
+    assertThatThrownBy(() -> provider.validateSeriesExists(TestConstants.FRED_SERIES_EUR))
         .isInstanceOf(ClientException.class)
         .hasMessageContaining("500");
   }
@@ -377,7 +372,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should return empty map when FRED returns no observations")
   void shouldReturnEmptyMapWhenNoObservations() {
     // Given
-    FredApiStubs.stubSuccessEmpty(FRED_SERIES_EUR);
+    FredApiStubs.stubSuccessEmpty(TestConstants.FRED_SERIES_EUR);
 
     // When
     var rates = provider.getExchangeRates(eurSeries, null);
@@ -392,11 +387,11 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
     // Given - All observations have value = "."
     var observations =
         List.of(
-            Observation.missingData(DATE_2024_JAN_06_WEEKEND), // Saturday
-            Observation.missingData(DATE_2024_JAN_07_WEEKEND), // Sunday
+            Observation.missingData(TestConstants.DATE_2024_JAN_06_WEEKEND), // Saturday
+            Observation.missingData(TestConstants.DATE_2024_JAN_07_WEEKEND), // Sunday
             Observation.missingData(LocalDate.of(2024, 1, 13)) // Holiday
             );
-    FredApiStubs.stubSuccessWithObservations(FRED_SERIES_EUR, observations);
+    FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When
     var rates = provider.getExchangeRates(eurSeries, null);
@@ -411,14 +406,14 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
     // Given - Realistic week with weekdays (data) and weekends (missing)
     var observations =
         List.of(
-            Observation.of(DATE_2024_JAN_02, "1.0850"), // Mon
+            Observation.of(TestConstants.DATE_2024_JAN_02, "1.0850"), // Mon
             Observation.of(LocalDate.of(2024, 1, 3), "1.0872"), // Tue
             Observation.of(LocalDate.of(2024, 1, 4), "1.0891"), // Wed
-            Observation.of(DATE_2024_JAN_05, "1.0823"), // Thu
-            Observation.missingData(DATE_2024_JAN_06_WEEKEND), // Sat
-            Observation.missingData(DATE_2024_JAN_07_WEEKEND) // Sun
+            Observation.of(TestConstants.DATE_2024_JAN_05, "1.0823"), // Thu
+            Observation.missingData(TestConstants.DATE_2024_JAN_06_WEEKEND), // Sat
+            Observation.missingData(TestConstants.DATE_2024_JAN_07_WEEKEND) // Sun
             );
-    FredApiStubs.stubSuccessWithObservations(FRED_SERIES_EUR, observations);
+    FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When
     var rates = provider.getExchangeRates(eurSeries, null);
@@ -427,8 +422,13 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
     assertThat(rates).hasSize(4); // Only weekdays
     assertThat(rates)
         .containsOnlyKeys(
-            DATE_2024_JAN_02, LocalDate.of(2024, 1, 3), LocalDate.of(2024, 1, 4), DATE_2024_JAN_05);
-    assertThat(rates).doesNotContainKeys(DATE_2024_JAN_06_WEEKEND, DATE_2024_JAN_07_WEEKEND);
+            TestConstants.DATE_2024_JAN_02,
+            LocalDate.of(2024, 1, 3),
+            LocalDate.of(2024, 1, 4),
+            TestConstants.DATE_2024_JAN_05);
+    assertThat(rates)
+        .doesNotContainKeys(
+            TestConstants.DATE_2024_JAN_06_WEEKEND, TestConstants.DATE_2024_JAN_07_WEEKEND);
   }
 
   @Test
@@ -437,7 +437,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
     // Given - FRED has data back to 1971
     var observations =
         List.of(Observation.of(LocalDate.of(1971, 1, 4), "0.3571")); // DEM/USD from 1971
-    FredApiStubs.stubSuccessWithObservations(FRED_SERIES_EUR, observations);
+    FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When
     var rates = provider.getExchangeRates(eurSeries, null);
@@ -452,15 +452,15 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should preserve high precision decimal values")
   void shouldPreserveHighPrecisionValues() {
     // Given - Values with many decimal places
-    var observations = List.of(Observation.of(DATE_2024_JAN_02, "1.08501234567890"));
-    FredApiStubs.stubSuccessWithObservations(FRED_SERIES_EUR, observations);
+    var observations = List.of(Observation.of(TestConstants.DATE_2024_JAN_02, "1.08501234567890"));
+    FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When
     var rates = provider.getExchangeRates(eurSeries, null);
 
     // Then
     assertThat(rates).hasSize(1);
-    var rate = rates.get(DATE_2024_JAN_02);
+    var rate = rates.get(TestConstants.DATE_2024_JAN_02);
     assertThat(rate).isEqualByComparingTo("1.08501234567890");
     assertThat(rate.scale()).isGreaterThanOrEqualTo(10); // Precision preserved
   }
@@ -471,10 +471,10 @@ class FredExchangeRateProviderIntegrationTest extends AbstractIntegrationTest {
     // Given - Duplicate dates (should not happen in FRED, this tests error handling)
     var observations =
         List.of(
-            Observation.of(DATE_2024_JAN_02, "1.0850"),
-            Observation.of(DATE_2024_JAN_02, "1.0999") // Duplicate date
+            Observation.of(TestConstants.DATE_2024_JAN_02, "1.0850"),
+            Observation.of(TestConstants.DATE_2024_JAN_02, "1.0999") // Duplicate date
             );
-    FredApiStubs.stubSuccessWithObservations(FRED_SERIES_EUR, observations);
+    FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When/Then - Provider should throw exception on malformed data
     assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))

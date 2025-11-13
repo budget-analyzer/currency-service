@@ -5,7 +5,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.budgetanalyzer.currency.fixture.TestConstants.FRED_SERIES_EUR;
 
 import java.time.LocalDate;
 
@@ -22,6 +21,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import org.budgetanalyzer.currency.base.AbstractIntegrationTest;
 import org.budgetanalyzer.currency.config.WireMockConfiguration;
 import org.budgetanalyzer.currency.fixture.FredApiStubs;
+import org.budgetanalyzer.currency.fixture.TestConstants;
 import org.budgetanalyzer.service.exception.ClientException;
 
 /**
@@ -105,7 +105,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should successfully fetch series observations with sample data")
   void shouldFetchSeriesObservationsSuccessfully() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
     var startDate = LocalDate.of(2024, 1, 1);
     FredApiStubs.stubSuccessWithSampleData(seriesId);
 
@@ -132,7 +132,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should handle empty observations array without error")
   void shouldHandleEmptyObservationsArray() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
     FredApiStubs.stubSuccessEmpty(seriesId);
 
     // When
@@ -147,7 +147,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should handle observations with missing data indicator '.'")
   void shouldHandleMissingDataIndicator() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
     FredApiStubs.stubSuccessWithMissingData(seriesId);
 
     // When
@@ -169,7 +169,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should handle large dataset with 365 observations efficiently")
   void shouldHandleLargeDataset() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
     FredApiStubs.stubSuccessWithLargeDataset(seriesId);
 
     // When
@@ -186,7 +186,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should include startDate in query parameters when provided")
   void shouldIncludeStartDateInRequest() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
     var startDate = LocalDate.of(2024, 6, 1);
     FredApiStubs.stubSuccessWithSampleData(seriesId);
 
@@ -233,7 +233,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException on 500 Server Error")
   void shouldThrowClientExceptionOn500ServerError() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
     FredApiStubs.stubServerError(seriesId);
 
     // When/Then
@@ -246,7 +246,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException on 429 Rate Limited")
   void shouldThrowClientExceptionOn429RateLimit() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
     FredApiStubs.stubRateLimited(seriesId);
 
     // When/Then
@@ -259,7 +259,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException on timeout after 2 seconds")
   void shouldThrowClientExceptionOnTimeout() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
     FredApiStubs.stubTimeout(seriesId); // 2 second delay
 
     // When/Then
@@ -283,7 +283,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException on malformed JSON response")
   void shouldThrowClientExceptionOnMalformedJson() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
     FredApiStubs.stubMalformedJson(seriesId);
 
     // When/Then
@@ -295,7 +295,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should handle non-JSON error response gracefully")
   void shouldHandleNonJsonErrorResponse() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
 
     // Stub plain text error response
     wireMockServer.stubFor(
@@ -320,7 +320,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should return true when series exists (200 OK)")
   void shouldReturnTrueWhenSeriesExists() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
     FredApiStubs.stubSeriesExistsSuccess(seriesId);
 
     // When
@@ -366,7 +366,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException on 500 Server Error (not return false)")
   void shouldThrowClientExceptionOnServerError() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
     FredApiStubs.stubSeriesExistsServerError(seriesId);
 
     // When/Then
@@ -379,7 +379,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException on 429 Rate Limited")
   void shouldThrowClientExceptionOnRateLimitForSeriesExists() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
 
     // Stub rate limit for /series endpoint
     wireMockServer.stubFor(
@@ -406,7 +406,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should throw ClientException on timeout after 3 seconds for seriesExists")
   void shouldThrowClientExceptionOnTimeoutForSeriesExists() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
     FredApiStubs.stubSeriesExistsTimeout(seriesId); // 6 second delay
 
     // When/Then
@@ -475,7 +475,7 @@ class FredClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Should truncate very long error messages to 500 characters")
   void shouldTruncateLongErrorMessages() {
     // Given
-    var seriesId = FRED_SERIES_EUR;
+    var seriesId = TestConstants.FRED_SERIES_EUR;
     var longErrorMessage = "Error: " + "x".repeat(1000); // 1000+ chars
 
     wireMockServer.stubFor(

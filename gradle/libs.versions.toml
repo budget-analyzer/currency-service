@@ -55,6 +55,7 @@ service-common = { module = "org.budgetanalyzer:service-common", version.ref = "
 
 # Runtime dependencies
 postgresql = { module = "org.postgresql:postgresql" }
+h2 = { module = "com.h2database:h2" }
 
 # Test dependencies
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junitPlatform" }

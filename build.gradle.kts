@@ -1,3 +1,5 @@
+import org.springframework.boot.gradle.tasks.run.BootRun
+
 plugins {
     java
     checkstyle
@@ -80,8 +82,19 @@ tasks.named("check") {
     dependsOn("spotlessCheck")
 }
 
+val jvmArgsList = listOf(
+    "--add-opens=java.base/java.nio=ALL-UNNAMED",
+    "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+    "--enable-native-access=ALL-UNNAMED"
+)
+
+tasks.withType<BootRun> {
+    jvmArgs = jvmArgsList
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
+    jvmArgs = jvmArgsList
 }
 
 tasks.withType<Javadoc> {

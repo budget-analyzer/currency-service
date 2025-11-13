@@ -24,9 +24,10 @@ CREATE TABLE event_publication (
 );
 
 -- Index for finding unpublished events (completion_date IS NULL)
--- Note: Partial index (WHERE clause) not supported by H2, so we index all rows
+-- Partial index only indexes pending events, not the entire audit trail
 CREATE INDEX idx_event_publication_unpublished
-    ON event_publication(completion_date);
+    ON event_publication(completion_date)
+    WHERE completion_date IS NULL;
 
 -- Index for finding events by type (useful for debugging/replay)
 CREATE INDEX idx_event_publication_event_type

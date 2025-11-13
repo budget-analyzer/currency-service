@@ -36,8 +36,10 @@ CREATE INDEX idx_currency_series_provider_series_id
     ON currency_series (provider_series_id);
 
 -- Index for filtering enabled currencies
+-- Partial index matches query pattern (findByEnabledTrue) and avoids inefficient boolean index
 CREATE INDEX idx_currency_series_enabled
-    ON currency_series (enabled);
+    ON currency_series (enabled)
+    WHERE enabled = true;
 
 -- Table and column comments for documentation
 COMMENT ON TABLE currency_series IS 'Mapping between ISO 4217 currency codes and exchange rate provider series identifiers';

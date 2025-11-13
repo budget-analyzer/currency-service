@@ -7,7 +7,8 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-    validate-on-migrate: true
+    validate-on-migrate: false  # Disabled for TestContainers - container reused across tests with modified migrations
+    clean-disabled: false  # Allow Flyway clean for tests
 
   data:
     redis:

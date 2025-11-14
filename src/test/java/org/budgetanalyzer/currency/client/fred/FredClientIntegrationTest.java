@@ -63,7 +63,7 @@ import org.budgetanalyzer.service.exception.ClientException;
  * @see WireMockConfig
  */
 @DisplayName("FredClient Integration Tests")
-class FredClientIntegrationTest extends AbstractWireMockTest {
+public class FredClientIntegrationTest extends AbstractWireMockTest {
 
   @Autowired private FredClient fredClient;
 

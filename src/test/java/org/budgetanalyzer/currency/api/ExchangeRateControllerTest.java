@@ -47,7 +47,7 @@ import org.budgetanalyzer.currency.repository.ExchangeRateRepository;
  * </ul>
  */
 @DisplayName("Exchange Rate Controller Integration Tests")
-class ExchangeRateControllerTest extends AbstractControllerTest {
+public class ExchangeRateControllerTest extends AbstractControllerTest {
 
   @Autowired private CurrencySeriesRepository currencySeriesRepository;
   @Autowired private ExchangeRateRepository exchangeRateRepository;

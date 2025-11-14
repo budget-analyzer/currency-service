@@ -94,10 +94,6 @@ class MessagingIntegrationTest extends AbstractWireMockTest {
   void cleanup() {
     super.resetDatabaseAndWireMock();
 
-    // Note: Queue cleanup is not strictly necessary since each test uses a unique queue
-    // (group: test-${random.uuid}). However, we attempt to purge known queues for cleanliness.
-    // We cannot easily discover all dynamic queue names, so we just handle exceptions gracefully.
-
     // Clear MDC
     MDC.clear();
   }

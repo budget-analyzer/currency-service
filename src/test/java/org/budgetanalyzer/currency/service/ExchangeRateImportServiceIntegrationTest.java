@@ -54,11 +54,11 @@ import org.budgetanalyzer.service.exception.ServiceException;
 @TestPropertySource(properties = "spring.cache.type=redis")
 class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
 
-  @Autowired private ExchangeRateImportService importService;
+  @Autowired private ExchangeRateImportService exchangeRateImportService;
 
   @Autowired private ExchangeRateRepository exchangeRateRepository;
 
-  @Autowired private CurrencySeriesRepository seriesRepository;
+  @Autowired private CurrencySeriesRepository currencySeriesRepository;
 
   @Autowired private CacheManager cacheManager;
 
@@ -97,9 +97,9 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
     var thbSeries = CurrencySeriesTestBuilder.defaultThb().build();
     var gbpSeries = CurrencySeriesTestBuilder.defaultGbp().build();
-    seriesRepository.save(eurSeries);
-    seriesRepository.save(thbSeries);
-    seriesRepository.save(gbpSeries);
+    currencySeriesRepository.save(eurSeries);
+    currencySeriesRepository.save(thbSeries);
+    currencySeriesRepository.save(gbpSeries);
 
     // Stub FRED API responses for historical data for each currency
     FredApiStubs.stubSuccessWithObservations(
@@ -121,7 +121,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(TestConstants.DATE_2024_JAN_02.toString(), "0.7810")));
 
     // Act
-    var results = importService.importMissingExchangeRates();
+    var results = exchangeRateImportService.importMissingExchangeRates();
 
     // Assert
     assertThat(results).hasSize(3);
@@ -150,9 +150,9 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
     var thbSeries = CurrencySeriesTestBuilder.defaultThb().build();
     var gbpSeries = CurrencySeriesTestBuilder.defaultGbp().build();
-    seriesRepository.save(eurSeries);
-    seriesRepository.save(thbSeries);
-    seriesRepository.save(gbpSeries);
+    currencySeriesRepository.save(eurSeries);
+    currencySeriesRepository.save(thbSeries);
+    currencySeriesRepository.save(gbpSeries);
 
     // Create EUR rates (already has data)
     var eurRates =
@@ -175,7 +175,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(TestConstants.DATE_2024_JAN_01.toString(), "0.7800")));
 
     // Act
-    var results = importService.importMissingExchangeRates();
+    var results = exchangeRateImportService.importMissingExchangeRates();
 
     // Assert - Returns 2 results (THB, GBP only)
     assertThat(results).hasSize(2);
@@ -197,9 +197,9 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
     var thbSeries = CurrencySeriesTestBuilder.defaultThb().build();
     var gbpSeries = CurrencySeriesTestBuilder.defaultGbp().build();
-    seriesRepository.save(eurSeries);
-    seriesRepository.save(thbSeries);
-    seriesRepository.save(gbpSeries);
+    currencySeriesRepository.save(eurSeries);
+    currencySeriesRepository.save(thbSeries);
+    currencySeriesRepository.save(gbpSeries);
 
     // Create rates for all series
     exchangeRateRepository.saveAll(
@@ -222,7 +222,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             TestConstants.RATE_GBP_USD));
 
     // Act
-    var results = importService.importMissingExchangeRates();
+    var results = exchangeRateImportService.importMissingExchangeRates();
 
     // Assert - Returns empty list (no import needed)
     assertThat(results).isEmpty();
@@ -241,9 +241,9 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
     var thbSeries = CurrencySeriesTestBuilder.defaultThb().build();
     var gbpSeries = CurrencySeriesTestBuilder.defaultGbp().build();
-    seriesRepository.save(eurSeries);
-    seriesRepository.save(thbSeries);
-    seriesRepository.save(gbpSeries);
+    currencySeriesRepository.save(eurSeries);
+    currencySeriesRepository.save(thbSeries);
+    currencySeriesRepository.save(gbpSeries);
 
     // Create existing rates ending Jan 15
     exchangeRateRepository.saveAll(
@@ -300,7 +300,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(jan20.toString(), "0.7840")));
 
     // Act
-    var results = importService.importLatestExchangeRates();
+    var results = exchangeRateImportService.importLatestExchangeRates();
 
     // Assert
     assertThat(results).hasSize(3);
@@ -319,9 +319,9 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
     var thbSeries = CurrencySeriesTestBuilder.defaultThb().build();
     var gbpSeries = CurrencySeriesTestBuilder.defaultGbp().enabled(false).build();
-    seriesRepository.save(eurSeries);
-    seriesRepository.save(thbSeries);
-    seriesRepository.save(gbpSeries);
+    currencySeriesRepository.save(eurSeries);
+    currencySeriesRepository.save(thbSeries);
+    currencySeriesRepository.save(gbpSeries);
 
     // Create existing rates for all
     exchangeRateRepository.saveAll(
@@ -353,7 +353,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
         java.util.List.of(new FredApiStubs.Observation(jan16.toString(), "32.6800")));
 
     // Act
-    var results = importService.importLatestExchangeRates();
+    var results = exchangeRateImportService.importLatestExchangeRates();
 
     // Assert - Returns 2 results (EUR, THB only)
     assertThat(results).hasSize(2);
@@ -374,7 +374,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void importExchangeRatesForSeriesImportsSpecificSeries() {
     // Arrange - Create EUR series with existing rates ending Jan 15
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     var existingRates =
         ExchangeRateTestBuilder.buildDateRange(
@@ -396,7 +396,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(jan16.plusDays(4).toString(), "0.8540")));
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert
     assertThat(result.currencyCode()).isEqualTo(TestConstants.VALID_CURRENCY_EUR);
@@ -416,7 +416,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void importExchangeRatesForSeriesWithNoDataUsesNullStartDate() {
     // Arrange - Create EUR series with NO existing rates
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     // Stub FRED API response with 3 historical rates
     FredApiStubs.stubSuccessWithObservations(
@@ -427,7 +427,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(TestConstants.DATE_2024_JAN_05.toString(), "0.8520")));
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert
     assertThat(result.newRecords()).isEqualTo(3);
@@ -445,7 +445,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   @DisplayName("importExchangeRatesForSeries throws ResourceNotFoundException for invalid ID")
   void importExchangeRatesForSeriesThrowsResourceNotFoundExceptionForInvalidId() {
     // Act & Assert
-    assertThatThrownBy(() -> importService.importExchangeRatesForSeries(999L))
+    assertThatThrownBy(() -> exchangeRateImportService.importExchangeRatesForSeries(999L))
         .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("999");
   }
@@ -465,7 +465,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void initialImportUsesBatchSaveForPerformance() {
     // Arrange - Create EUR series with NO existing rates
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     // Stub FRED API response with 3 rates
     FredApiStubs.stubSuccessWithObservations(
@@ -476,7 +476,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(TestConstants.DATE_2024_JAN_05.toString(), "0.8520")));
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert
     assertThat(result.newRecords()).isEqualTo(3);
@@ -498,7 +498,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void incrementalImportWithAllNewRecordsAddsAllRates() {
     // Arrange - EUR series with rates ending Jan 15
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     exchangeRateRepository.saveAll(
         ExchangeRateTestBuilder.buildDateRange(
@@ -519,7 +519,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(jan16.plusDays(4).toString(), "0.8540")));
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert
     assertThat(result.newRecords()).isEqualTo(5);
@@ -538,7 +538,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void incrementalImportSkipsUnchangedRecords() {
     // Arrange - EUR series with rates for Jan 15-20
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     var jan15 = TestConstants.DATE_2024_JAN_15;
     exchangeRateRepository.saveAll(
@@ -569,7 +569,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(jan21.plusDays(4).toString(), "0.8640"))); // Jan 25 - NEW
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert
     assertThat(result.newRecords()).isEqualTo(5); // Jan 21-25
@@ -588,7 +588,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void incrementalImportUpdatesChangedRates() {
     // Arrange - EUR series with rate for Jan 15 = 0.8500
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     var jan15 = TestConstants.DATE_2024_JAN_15;
     exchangeRateRepository.save(
@@ -609,7 +609,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(jan16.plusDays(4).toString(), "0.8640")));
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert
     assertThat(result.newRecords()).isEqualTo(5); // Jan 16-20
@@ -632,7 +632,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void deduplicationHandlesMixedScenarios() {
     // Arrange - EUR series with rates: Jan 10 (0.8500), Jan 11 (0.8600)
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     var jan10 = LocalDate.of(2024, 1, 10);
     var jan11 = jan10.plusDays(1);
@@ -658,7 +658,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(jan12.plusDays(3).toString(), "0.9100"))); // NEW
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert
     assertThat(result.newRecords()).isEqualTo(4); // Jan 12-15
@@ -677,7 +677,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void importResultContainsCorrectEarliestAndLatestDates() {
     // Arrange - EUR series with no data
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     // Stub FRED API response with rates for Jan 1-31, 2024
     var jan01 = LocalDate.of(2024, 1, 1);
@@ -690,7 +690,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(jan31.toString(), "0.8700")));
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert
     assertThat(result.earliestExchangeRateDate()).isEqualTo(jan01);
@@ -715,7 +715,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void importMissingExchangeRatesEvictsAllCacheEntries() {
     // Arrange - Create EUR series with no data
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     // Populate cache with unrelated query results (simulate existing cache)
     var cache = cacheManager.getCache(CacheConfig.EXCHANGE_RATES_CACHE);
@@ -729,7 +729,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(TestConstants.DATE_2024_JAN_01.toString(), "0.8500")));
 
     // Act
-    importService.importMissingExchangeRates();
+    exchangeRateImportService.importMissingExchangeRates();
 
     // Assert - Cache cleared
     assertThat(cache.get("test-key")).isNull();
@@ -745,7 +745,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void importLatestExchangeRatesEvictsAllCacheEntries() {
     // Arrange - Create EUR series with existing data
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     exchangeRateRepository.saveAll(
         ExchangeRateTestBuilder.buildDateRange(
@@ -766,7 +766,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
         java.util.List.of(new FredApiStubs.Observation(jan16.toString(), "0.8500")));
 
     // Act
-    importService.importLatestExchangeRates();
+    exchangeRateImportService.importLatestExchangeRates();
 
     // Assert - Cache cleared
     assertThat(cache.get("test-key")).isNull();
@@ -782,7 +782,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void importExchangeRatesForSeriesEvictsAllCacheEntries() {
     // Arrange - EUR series with existing data
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     exchangeRateRepository.saveAll(
         ExchangeRateTestBuilder.buildDateRange(
@@ -803,7 +803,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
         java.util.List.of(new FredApiStubs.Observation(jan16.toString(), "0.8500")));
 
     // Act
-    importService.importExchangeRatesForSeries(eurSeries.getId());
+    exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert - Cache cleared
     assertThat(cache.get("test-key")).isNull();
@@ -819,7 +819,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void cacheEvictionOccursEvenWithEmptyImportResults() {
     // Arrange - EUR series with existing data up to today
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     exchangeRateRepository.save(
         ExchangeRateTestBuilder.forSeries(eurSeries)
@@ -836,7 +836,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSuccessEmpty(TestConstants.FRED_SERIES_EUR);
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert - Result has 0 records but cache still cleared
     assertThat(result.newRecords()).isEqualTo(0);
@@ -866,7 +866,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void cacheIsNotClearedOnTransactionRollback() {
     // Arrange - EUR series with existing data
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     exchangeRateRepository.saveAll(
         ExchangeRateTestBuilder.buildDateRange(
@@ -885,7 +885,8 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubServerError(TestConstants.FRED_SERIES_EUR);
 
     // Act & Assert - Exception thrown
-    assertThatThrownBy(() -> importService.importExchangeRatesForSeries(eurSeries.getId()))
+    assertThatThrownBy(
+            () -> exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId()))
         .isInstanceOf(ServiceException.class);
 
     // Verify cache is NOT cleared on rollback to maintain consistency
@@ -910,7 +911,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void providerCalledWithCorrectParametersForIncrementalImport() {
     // Arrange - EUR series with rates ending Jan 15
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     exchangeRateRepository.saveAll(
         ExchangeRateTestBuilder.buildDateRange(
@@ -926,7 +927,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
         java.util.List.of(new FredApiStubs.Observation(jan16.toString(), "0.8500")));
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert - Import completed successfully (provider was called with correct parameters)
     assertThat(result.newRecords()).isEqualTo(1);
@@ -942,7 +943,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void providerCalledWithNullStartDateForInitialImport() {
     // Arrange - EUR series with NO existing rates
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     // Stub FRED API response
     FredApiStubs.stubSuccessWithObservations(
@@ -951,7 +952,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(TestConstants.DATE_2024_JAN_01.toString(), "0.8500")));
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert - Import completed successfully (provider was called with null start date for full
     // history)
@@ -968,7 +969,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void providerReturnsEmptyMapResultsInZeroCounts() {
     // Arrange - EUR series with existing data
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     exchangeRateRepository.saveAll(
         ExchangeRateTestBuilder.buildDateRange(
@@ -981,7 +982,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSuccessEmpty(TestConstants.FRED_SERIES_EUR);
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert
     assertThat(result.newRecords()).isEqualTo(0);
@@ -1003,13 +1004,14 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void providerExceptionBubblesUpFromFredClient() {
     // Arrange - EUR series
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     // Stub FRED API to return server error
     FredApiStubs.stubServerError(TestConstants.FRED_SERIES_EUR);
 
     // Act & Assert - ClientException is thrown (a type of ServiceException)
-    assertThatThrownBy(() -> importService.importExchangeRatesForSeries(eurSeries.getId()))
+    assertThatThrownBy(
+            () -> exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId()))
         .isInstanceOf(ServiceException.class)
         .hasMessageContaining("FRED API error");
   }
@@ -1025,7 +1027,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void serviceUsesProviderAbstractionNotFredDirectly() {
     // Arrange - EUR series
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     // Stub FRED API response (service uses ExchangeRateProvider abstraction, not FRED directly)
     FredApiStubs.stubSuccessWithObservations(
@@ -1034,7 +1036,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(TestConstants.DATE_2024_JAN_01.toString(), "0.8500")));
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert - Service works with generic provider interface
     assertThat(result.newRecords()).isEqualTo(1);
@@ -1053,9 +1055,9 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
     var thbSeries = CurrencySeriesTestBuilder.defaultThb().build();
     var gbpSeries = CurrencySeriesTestBuilder.defaultGbp().build();
-    seriesRepository.save(eurSeries);
-    seriesRepository.save(thbSeries);
-    seriesRepository.save(gbpSeries);
+    currencySeriesRepository.save(eurSeries);
+    currencySeriesRepository.save(thbSeries);
+    currencySeriesRepository.save(gbpSeries);
 
     // Create existing rates for all
     exchangeRateRepository.saveAll(
@@ -1090,7 +1092,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
         java.util.List.of(new FredApiStubs.Observation(jan16.toString(), "0.7800")));
 
     // Act
-    var results = importService.importLatestExchangeRates();
+    var results = exchangeRateImportService.importLatestExchangeRates();
 
     // Assert - 3 currencies imported successfully (provider called once per currency)
     assertThat(results).hasSize(3);
@@ -1112,7 +1114,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void transactionRollbackOnProviderFailure() {
     // Arrange - EUR series with existing data
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     exchangeRateRepository.saveAll(
         ExchangeRateTestBuilder.buildDateRange(
@@ -1128,7 +1130,8 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubServerError(TestConstants.FRED_SERIES_EUR);
 
     // Act & Assert - Exception thrown
-    assertThatThrownBy(() -> importService.importExchangeRatesForSeries(eurSeries.getId()))
+    assertThatThrownBy(
+            () -> exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId()))
         .isInstanceOf(ServiceException.class);
 
     // Verify no new records in database (transaction rolled back)
@@ -1147,7 +1150,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void transactionRollbackOnRepositorySaveFailure() {
     // Arrange - EUR series
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     // Stub FRED API response with valid data
     FredApiStubs.stubSuccessWithObservations(
@@ -1162,7 +1165,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     // by testing with actual constraint violations
 
     // Act - Import should succeed (we can't force repository failure in integration test)
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert - Import succeeded
     assertThat(result.newRecords()).isEqualTo(2);
@@ -1181,9 +1184,9 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
     var thbSeries = CurrencySeriesTestBuilder.defaultThb().build();
     var gbpSeries = CurrencySeriesTestBuilder.defaultGbp().build();
-    seriesRepository.save(eurSeries);
-    seriesRepository.save(thbSeries);
-    seriesRepository.save(gbpSeries);
+    currencySeriesRepository.save(eurSeries);
+    currencySeriesRepository.save(thbSeries);
+    currencySeriesRepository.save(gbpSeries);
 
     // Stub FRED API: EUR succeeds, THB throws error (causes rollback), GBP not reached
     FredApiStubs.stubSuccessWithObservations(
@@ -1200,7 +1203,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     var countBefore = exchangeRateRepository.count();
 
     // Act & Assert - Exception thrown
-    assertThatThrownBy(() -> importService.importMissingExchangeRates())
+    assertThatThrownBy(() -> exchangeRateImportService.importMissingExchangeRates())
         .isInstanceOf(ServiceException.class);
 
     // Verify NO data persisted for any currency (entire transaction rolled back)
@@ -1223,10 +1226,10 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void importLatestRatesWithNoEnabledSeriesReturnsEmptyList() {
     // Arrange - Create only disabled currency series
     var disabledSeries = CurrencySeriesTestBuilder.defaultEur().enabled(false).build();
-    seriesRepository.save(disabledSeries);
+    currencySeriesRepository.save(disabledSeries);
 
     // Act
-    var results = importService.importLatestExchangeRates();
+    var results = exchangeRateImportService.importLatestExchangeRates();
 
     // Assert - Returns empty list (no error)
     assertThat(results).isEmpty();
@@ -1241,7 +1244,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   @DisplayName("importExchangeRatesForSeries with zero ID throws ResourceNotFoundException")
   void importExchangeRatesForSeriesWithZeroIdThrowsResourceNotFoundException() {
     // Act & Assert
-    assertThatThrownBy(() -> importService.importExchangeRatesForSeries(0L))
+    assertThatThrownBy(() -> exchangeRateImportService.importExchangeRatesForSeries(0L))
         .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("0");
   }
@@ -1255,7 +1258,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   @DisplayName("importExchangeRatesForSeries with negative ID throws ResourceNotFoundException")
   void importExchangeRatesForSeriesWithNegativeIdThrowsResourceNotFoundException() {
     // Act & Assert
-    assertThatThrownBy(() -> importService.importExchangeRatesForSeries(-1L))
+    assertThatThrownBy(() -> exchangeRateImportService.importExchangeRatesForSeries(-1L))
         .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("-1");
   }
@@ -1271,7 +1274,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void importSetsBothCurrencySeriesAndTargetCurrencyFields() {
     // Arrange - EUR series
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     // Stub FRED API response with 5 rates
     FredApiStubs.stubSuccessWithObservations(
@@ -1286,7 +1289,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
                 TestConstants.DATE_2024_JAN_07_WEEKEND.toString(), "0.8540")));
 
     // Act
-    importService.importExchangeRatesForSeries(eurSeries.getId());
+    exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert - All persisted rates have both fields set
     var persistedRates = exchangeRateRepository.findAll();
@@ -1314,13 +1317,14 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void fredApiErrorsBubbleUpFromClient() {
     // Arrange - EUR series
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     // Stub FRED API to return server error
     FredApiStubs.stubServerError(TestConstants.FRED_SERIES_EUR);
 
     // Act & Assert - ClientException is thrown with FRED API error message
-    assertThatThrownBy(() -> importService.importExchangeRatesForSeries(eurSeries.getId()))
+    assertThatThrownBy(
+            () -> exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId()))
         .isInstanceOf(ServiceException.class)
         .hasMessageContaining("FRED API error");
   }
@@ -1340,11 +1344,11 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     var gbpSeries = CurrencySeriesTestBuilder.defaultGbp().build();
     var jpySeries = CurrencySeriesTestBuilder.defaultJpy().build();
     var cadSeries = CurrencySeriesTestBuilder.defaultCad().build();
-    seriesRepository.save(eurSeries);
-    seriesRepository.save(thbSeries);
-    seriesRepository.save(gbpSeries);
-    seriesRepository.save(jpySeries);
-    seriesRepository.save(cadSeries);
+    currencySeriesRepository.save(eurSeries);
+    currencySeriesRepository.save(thbSeries);
+    currencySeriesRepository.save(gbpSeries);
+    currencySeriesRepository.save(jpySeries);
+    currencySeriesRepository.save(cadSeries);
 
     // Create existing rates for all
     var baseDate = TestConstants.DATE_2024_JAN_01;
@@ -1388,7 +1392,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
         java.util.List.of(new FredApiStubs.Observation(nextDate.toString(), "1.3500")));
 
     // Act
-    var results = importService.importLatestExchangeRates();
+    var results = exchangeRateImportService.importLatestExchangeRates();
 
     // Assert
     assertThat(results).hasSize(5);
@@ -1415,7 +1419,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void importResultTimestampIsSetToCurrentTime() {
     // Arrange - EUR series with no data
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     // Stub FRED API response
     FredApiStubs.stubSuccessWithObservations(
@@ -1425,7 +1429,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
 
     // Act
     var timestampBefore = Instant.now();
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
     var timestampAfter = Instant.now();
 
     // Assert - Timestamp is between before/after timestamps
@@ -1444,7 +1448,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void importLogsSummaryInformation() {
     // Arrange - EUR series with some existing data
     var eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
-    seriesRepository.save(eurSeries);
+    currencySeriesRepository.save(eurSeries);
 
     exchangeRateRepository.saveAll(
         ExchangeRateTestBuilder.buildDateRange(
@@ -1463,7 +1467,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
             new FredApiStubs.Observation(jan16.plusDays(2).toString(), "0.8520")));
 
     // Act
-    var result = importService.importExchangeRatesForSeries(eurSeries.getId());
+    var result = exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId());
 
     // Assert - Result contains expected data (logs are verified by inspection)
     assertThat(result.currencyCode()).isEqualTo(TestConstants.VALID_CURRENCY_EUR);

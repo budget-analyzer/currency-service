@@ -17,7 +17,7 @@ public abstract class AbstractWireMockTest extends AbstractIntegrationTest {
    * WireMock server for mocking FRED API responses.
    *
    * <p>Server instance is provided by {@link WireMockConfig} and shared across all tests that
-   * import the configuration. FIXME: I think this is redundant
+   * import the configuration.
    */
   @Autowired protected WireMockServer wireMockServer;
 

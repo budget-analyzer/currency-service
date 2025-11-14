@@ -49,13 +49,13 @@ import org.budgetanalyzer.currency.repository.ExchangeRateRepository;
 @DisplayName("Exchange Rate Controller Integration Tests")
 class ExchangeRateControllerTest extends AbstractControllerTest {
 
-  @Autowired private CurrencySeriesRepository seriesRepository;
+  @Autowired private CurrencySeriesRepository currencySeriesRepository;
   @Autowired private ExchangeRateRepository exchangeRateRepository;
 
   @BeforeEach
   void setUp() {
     exchangeRateRepository.deleteAll();
-    seriesRepository.deleteAll();
+    currencySeriesRepository.deleteAll();
   }
 
   // ===========================================================================================
@@ -432,7 +432,7 @@ class ExchangeRateControllerTest extends AbstractControllerTest {
   private void saveExchangeRatesForSeries(
       String currencyCode, LocalDate startDate, LocalDate endDate, BigDecimal rate) {
     var series = createSeriesForCurrency(currencyCode);
-    seriesRepository.save(series);
+    currencySeriesRepository.save(series);
 
     var rates = ExchangeRateTestBuilder.buildDateRange(series, startDate, endDate, rate);
     exchangeRateRepository.saveAll(rates);
@@ -449,7 +449,7 @@ class ExchangeRateControllerTest extends AbstractControllerTest {
   private void saveWeekdayRatesForSeries(
       String currencyCode, LocalDate startDate, LocalDate endDate, BigDecimal rate) {
     var series = createSeriesForCurrency(currencyCode);
-    seriesRepository.save(series);
+    currencySeriesRepository.save(series);
 
     var rates = ExchangeRateTestBuilder.buildWeekdaysOnly(series, startDate, endDate, rate);
     exchangeRateRepository.saveAll(rates);

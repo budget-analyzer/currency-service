@@ -4,6 +4,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 
 /**
  * Centralized WireMock configuration for tests that need to mock external HTTP APIs.
@@ -76,9 +77,7 @@ public class WireMockConfig {
   static {
     // Start WireMock server in static initializer to ensure it's available
     // before @DynamicPropertySource is evaluated in test classes
-    wireMockServer =
-        new WireMockServer(
-            com.github.tomakehurst.wiremock.core.WireMockConfiguration.options().dynamicPort());
+    wireMockServer = new WireMockServer(WireMockConfiguration.options().dynamicPort());
     wireMockServer.start();
   }
 

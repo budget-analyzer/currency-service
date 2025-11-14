@@ -52,7 +52,7 @@ import org.budgetanalyzer.service.exception.ClientException;
 @DisplayName("FredExchangeRateProvider Integration Tests")
 class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
 
-  @Autowired private FredExchangeRateProvider provider;
+  @Autowired private FredExchangeRateProvider fredExchangeRateProvider;
 
   @Autowired private WireMockServer wireMockServer;
 
@@ -61,8 +61,8 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
 
   @BeforeEach
   void setUp() {
-    // Reset WireMock stubs to prevent pollution between tests
-    wireMockServer.resetAll();
+    // strictly speaking don't need to reset db but why not?
+    super.resetDatabaseAndWireMock();
 
     // Create test currency series
     eurSeries = CurrencySeriesTestBuilder.defaultEur().build();
@@ -83,7 +83,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSuccessWithSampleData(TestConstants.FRED_SERIES_EUR);
 
     // When
-    var rates = provider.getExchangeRates(eurSeries, null);
+    var rates = fredExchangeRateProvider.getExchangeRates(eurSeries, null);
 
     // Then
     assertThat(rates).isNotEmpty();
@@ -118,7 +118,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSuccessWithSampleData(TestConstants.FRED_SERIES_EUR);
 
     // When
-    var rates = provider.getExchangeRates(eurSeries, startDate);
+    var rates = fredExchangeRateProvider.getExchangeRates(eurSeries, startDate);
 
     // Then
     assertThat(rates).isNotEmpty();
@@ -142,7 +142,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When
-    var rates = provider.getExchangeRates(eurSeries, null);
+    var rates = fredExchangeRateProvider.getExchangeRates(eurSeries, null);
 
     // Then
     assertThat(rates).isNotEmpty();
@@ -169,7 +169,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When
-    var rates = provider.getExchangeRates(eurSeries, null);
+    var rates = fredExchangeRateProvider.getExchangeRates(eurSeries, null);
 
     // Then
     assertThat(rates).hasSize(5);
@@ -190,7 +190,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
 
     // When
     long startTime = System.currentTimeMillis();
-    var rates = provider.getExchangeRates(eurSeries, null);
+    var rates = fredExchangeRateProvider.getExchangeRates(eurSeries, null);
     long duration = System.currentTimeMillis() - startTime;
 
     // Then
@@ -209,7 +209,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSuccessWithSampleData(TestConstants.FRED_SERIES_THB);
 
     // When
-    var rates = provider.getExchangeRates(thbSeries, null);
+    var rates = fredExchangeRateProvider.getExchangeRates(thbSeries, null);
 
     // Then
     assertThat(rates).isNotEmpty();
@@ -233,7 +233,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubNotFound(TestConstants.FRED_SERIES_EUR);
 
     // When/Then
-    assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))
+    assertThatThrownBy(() -> fredExchangeRateProvider.getExchangeRates(eurSeries, null))
         .isInstanceOf(ClientException.class)
         .hasMessageContaining("404");
   }
@@ -245,7 +245,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubBadRequest(TestConstants.FRED_SERIES_EUR);
 
     // When/Then
-    assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))
+    assertThatThrownBy(() -> fredExchangeRateProvider.getExchangeRates(eurSeries, null))
         .isInstanceOf(ClientException.class)
         .hasMessageContaining("Bad Request");
   }
@@ -257,7 +257,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubServerError(TestConstants.FRED_SERIES_EUR);
 
     // When/Then
-    assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))
+    assertThatThrownBy(() -> fredExchangeRateProvider.getExchangeRates(eurSeries, null))
         .isInstanceOf(ClientException.class)
         .hasMessageContaining("500");
   }
@@ -269,7 +269,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubTimeout(TestConstants.FRED_SERIES_EUR); // 35 second delay
 
     // When/Then
-    assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))
+    assertThatThrownBy(() -> fredExchangeRateProvider.getExchangeRates(eurSeries, null))
         .isInstanceOf(ClientException.class)
         .hasMessageContaining("Failed to fetch");
   }
@@ -281,7 +281,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubMalformedJson(TestConstants.FRED_SERIES_EUR);
 
     // When/Then
-    assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))
+    assertThatThrownBy(() -> fredExchangeRateProvider.getExchangeRates(eurSeries, null))
         .isInstanceOf(ClientException.class);
   }
 
@@ -292,7 +292,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubRateLimited(TestConstants.FRED_SERIES_EUR);
 
     // When/Then
-    assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))
+    assertThatThrownBy(() -> fredExchangeRateProvider.getExchangeRates(eurSeries, null))
         .isInstanceOf(ClientException.class)
         .hasMessageContaining("429");
   }
@@ -308,7 +308,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSeriesExistsSuccess(TestConstants.FRED_SERIES_EUR);
 
     // When
-    boolean exists = provider.validateSeriesExists(TestConstants.FRED_SERIES_EUR);
+    boolean exists = fredExchangeRateProvider.validateSeriesExists(TestConstants.FRED_SERIES_EUR);
 
     // Then
     assertThat(exists).isTrue();
@@ -321,7 +321,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSeriesExistsNotFound("NONEXISTENT");
 
     // When
-    boolean exists = provider.validateSeriesExists("NONEXISTENT");
+    boolean exists = fredExchangeRateProvider.validateSeriesExists("NONEXISTENT");
 
     // Then
     assertThat(exists).isFalse();
@@ -334,7 +334,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSeriesExistsBadRequest("INVALID@@@");
 
     // When
-    boolean exists = provider.validateSeriesExists("INVALID@@@");
+    boolean exists = fredExchangeRateProvider.validateSeriesExists("INVALID@@@");
 
     // Then
     assertThat(exists).isFalse();
@@ -347,7 +347,8 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSeriesExistsServerError(TestConstants.FRED_SERIES_EUR);
 
     // When/Then
-    assertThatThrownBy(() -> provider.validateSeriesExists(TestConstants.FRED_SERIES_EUR))
+    assertThatThrownBy(
+            () -> fredExchangeRateProvider.validateSeriesExists(TestConstants.FRED_SERIES_EUR))
         .isInstanceOf(ClientException.class)
         .hasMessageContaining("500");
   }
@@ -363,7 +364,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSuccessEmpty(TestConstants.FRED_SERIES_EUR);
 
     // When
-    var rates = provider.getExchangeRates(eurSeries, null);
+    var rates = fredExchangeRateProvider.getExchangeRates(eurSeries, null);
 
     // Then
     assertThat(rates).isEmpty();
@@ -382,7 +383,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When
-    var rates = provider.getExchangeRates(eurSeries, null);
+    var rates = fredExchangeRateProvider.getExchangeRates(eurSeries, null);
 
     // Then
     assertThat(rates).isEmpty();
@@ -404,7 +405,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When
-    var rates = provider.getExchangeRates(eurSeries, null);
+    var rates = fredExchangeRateProvider.getExchangeRates(eurSeries, null);
 
     // Then
     assertThat(rates).hasSize(4); // Only weekdays
@@ -428,7 +429,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When
-    var rates = provider.getExchangeRates(eurSeries, null);
+    var rates = fredExchangeRateProvider.getExchangeRates(eurSeries, null);
 
     // Then
     assertThat(rates).hasSize(1);
@@ -444,7 +445,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When
-    var rates = provider.getExchangeRates(eurSeries, null);
+    var rates = fredExchangeRateProvider.getExchangeRates(eurSeries, null);
 
     // Then
     assertThat(rates).hasSize(1);
@@ -465,7 +466,7 @@ class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSuccessWithObservations(TestConstants.FRED_SERIES_EUR, observations);
 
     // When/Then - Provider should throw exception on malformed data
-    assertThatThrownBy(() -> provider.getExchangeRates(eurSeries, null))
+    assertThatThrownBy(() -> fredExchangeRateProvider.getExchangeRates(eurSeries, null))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Duplicate key");
   }

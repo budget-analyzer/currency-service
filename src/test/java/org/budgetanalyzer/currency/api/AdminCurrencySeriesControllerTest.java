@@ -47,13 +47,13 @@ import org.budgetanalyzer.currency.repository.CurrencySeriesRepository;
 @DisplayName("Admin Currency Series Controller Integration Tests")
 class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
 
-  @Autowired private CurrencySeriesRepository repository;
+  @Autowired private CurrencySeriesRepository currencySeriesRepository;
 
   @Autowired private ObjectMapper objectMapper;
 
   @BeforeEach
   void setUp() {
-    repository.deleteAll();
+    currencySeriesRepository.deleteAll();
   }
 
   // ===========================================================================================
@@ -89,7 +89,7 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
         .andExpect(jsonPath("$.updatedAt").isString());
 
     // Verify database
-    var saved = repository.findAll();
+    var saved = currencySeriesRepository.findAll();
     assert saved.size() == 1;
     assert saved.get(0).getCurrencyCode().equals("EUR");
   }
@@ -118,7 +118,7 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
         .andExpect(jsonPath("$.enabled").value(false));
 
     // Verify database
-    var saved = repository.findAll();
+    var saved = currencySeriesRepository.findAll();
     assert saved.size() == 1;
     assert !saved.get(0).isEnabled();
   }
@@ -278,7 +278,7 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
   void shouldReturn422WhenCurrencyCodeAlreadyExists() throws Exception {
     // Setup: Create existing currency
     var existing = CurrencySeriesTestBuilder.defaultEur().build();
-    repository.save(existing);
+    currencySeriesRepository.save(existing);
 
     // Mock FRED API (shouldn't be called due to duplicate check)
     FredApiStubs.stubSeriesExistsSuccess(TestConstants.FRED_SERIES_EUR);
@@ -352,7 +352,7 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
   @DisplayName("GET /v1/admin/currencies/{id} - should return currency series by ID")
   void shouldReturnCurrencySeriesById() throws Exception {
     // Setup: Save currency series
-    var saved = repository.save(CurrencySeriesTestBuilder.defaultEur().build());
+    var saved = currencySeriesRepository.save(CurrencySeriesTestBuilder.defaultEur().build());
 
     // Execute
     performGet("/v1/admin/currencies/{id}", saved.getId())
@@ -370,7 +370,9 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
   @DisplayName("GET /v1/admin/currencies/{id} - should return disabled currency series")
   void shouldReturnDisabledCurrencySeries() throws Exception {
     // Setup: Save disabled currency series
-    var saved = repository.save(CurrencySeriesTestBuilder.defaultGbp().enabled(false).build());
+    var saved =
+        currencySeriesRepository.save(
+            CurrencySeriesTestBuilder.defaultGbp().enabled(false).build());
 
     // Execute
     performGet("/v1/admin/currencies/{id}", saved.getId())
@@ -408,7 +410,9 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
   @DisplayName("PUT /v1/admin/currencies/{id} - should enable currency series")
   void shouldEnableCurrencySeries() throws Exception {
     // Setup: Save disabled currency series
-    var saved = repository.save(CurrencySeriesTestBuilder.defaultEur().enabled(false).build());
+    var saved =
+        currencySeriesRepository.save(
+            CurrencySeriesTestBuilder.defaultEur().enabled(false).build());
     final var originalUpdatedAt = saved.getUpdatedAt();
 
     // Prepare request to enable
@@ -431,7 +435,7 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
         .andExpect(jsonPath("$.enabled").value(true));
 
     // Verify database
-    var updated = repository.findById(saved.getId()).orElseThrow();
+    var updated = currencySeriesRepository.findById(saved.getId()).orElseThrow();
     assert updated.isEnabled();
     assert updated.getUpdatedAt().isAfter(originalUpdatedAt);
   }
@@ -440,7 +444,8 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
   @DisplayName("PUT /v1/admin/currencies/{id} - should disable currency series")
   void shouldDisableCurrencySeries() throws Exception {
     // Setup: Save enabled currency series
-    var saved = repository.save(CurrencySeriesTestBuilder.defaultThb().enabled(true).build());
+    var saved =
+        currencySeriesRepository.save(CurrencySeriesTestBuilder.defaultThb().enabled(true).build());
 
     // Prepare request to disable
     var requestJson =
@@ -458,7 +463,7 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
         .andExpect(jsonPath("$.enabled").value(false));
 
     // Verify database
-    var updated = repository.findById(saved.getId()).orElseThrow();
+    var updated = currencySeriesRepository.findById(saved.getId()).orElseThrow();
     assert !updated.isEnabled();
   }
 
@@ -466,8 +471,8 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
   @DisplayName("PUT /v1/admin/currencies/{id} - should preserve immutable fields")
   void shouldPreserveImmutableFields() throws Exception {
     // Setup: Save currency series
-    var saved = repository.save(CurrencySeriesTestBuilder.defaultGbp().build());
-    repository.flush();
+    var saved = currencySeriesRepository.save(CurrencySeriesTestBuilder.defaultGbp().build());
+    currencySeriesRepository.flush();
     var originalCurrencyCode = saved.getCurrencyCode();
     var originalProviderSeriesId = saved.getProviderSeriesId();
     final var originalCreatedAt = saved.getCreatedAt();
@@ -487,7 +492,7 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
         .andExpect(jsonPath("$.providerSeriesId").value(originalProviderSeriesId));
 
     // Verify database - immutable fields unchanged
-    var updated = repository.findById(saved.getId()).orElseThrow();
+    var updated = currencySeriesRepository.findById(saved.getId()).orElseThrow();
     assert updated.getCurrencyCode().equals(originalCurrencyCode);
     assert updated.getProviderSeriesId().equals(originalProviderSeriesId);
     // Verify createdAt is not null and hasn't changed significantly (within 1 second)
@@ -548,7 +553,7 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
     }
 
     // Verify all were created
-    assert repository.count() == validCodes.length;
+    assert currencySeriesRepository.count() == validCodes.length;
   }
 
   @Test
@@ -577,6 +582,6 @@ class AdminCurrencySeriesControllerTest extends AbstractControllerTest {
     }
 
     // Verify none were created
-    assert repository.count() == 0;
+    assert currencySeriesRepository.count() == 0;
   }
 }

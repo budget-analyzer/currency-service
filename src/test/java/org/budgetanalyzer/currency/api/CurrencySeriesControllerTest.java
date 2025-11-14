@@ -43,11 +43,11 @@ import org.budgetanalyzer.currency.repository.CurrencySeriesRepository;
 @DisplayName("Currency Series Controller Integration Tests")
 class CurrencySeriesControllerTest extends AbstractControllerTest {
 
-  @Autowired private CurrencySeriesRepository repository;
+  @Autowired private CurrencySeriesRepository currencySeriesRepository;
 
   @BeforeEach
   void setUp() {
-    repository.deleteAll();
+    currencySeriesRepository.deleteAll();
   }
 
   // ===========================================================================================
@@ -72,7 +72,7 @@ class CurrencySeriesControllerTest extends AbstractControllerTest {
     var eur = CurrencySeriesTestBuilder.defaultEur().build();
     var thb = CurrencySeriesTestBuilder.defaultThb().build();
     var gbp = CurrencySeriesTestBuilder.defaultGbp().enabled(false).build();
-    repository.saveAll(List.of(eur, thb, gbp));
+    currencySeriesRepository.saveAll(List.of(eur, thb, gbp));
 
     // Execute
     performGet("/v1/currencies?enabledOnly=false")
@@ -94,7 +94,7 @@ class CurrencySeriesControllerTest extends AbstractControllerTest {
     var eur = CurrencySeriesTestBuilder.defaultEur().build();
     var thb = CurrencySeriesTestBuilder.defaultThb().build();
     var gbp = CurrencySeriesTestBuilder.defaultGbp().enabled(false).build();
-    repository.saveAll(List.of(eur, thb, gbp));
+    currencySeriesRepository.saveAll(List.of(eur, thb, gbp));
 
     // Execute
     performGet("/v1/currencies?enabledOnly=true")
@@ -115,7 +115,7 @@ class CurrencySeriesControllerTest extends AbstractControllerTest {
     var eur = CurrencySeriesTestBuilder.defaultEur().build();
     var thb = CurrencySeriesTestBuilder.defaultThb().build();
     var gbp = CurrencySeriesTestBuilder.defaultGbp().enabled(false).build();
-    repository.saveAll(List.of(eur, thb, gbp));
+    currencySeriesRepository.saveAll(List.of(eur, thb, gbp));
 
     // Execute (no query parameter - should default to enabledOnly=false)
     performGet("/v1/currencies")
@@ -134,7 +134,7 @@ class CurrencySeriesControllerTest extends AbstractControllerTest {
     var eur = CurrencySeriesTestBuilder.defaultEur().build();
     var thb = CurrencySeriesTestBuilder.defaultThb().build();
     var gbp = CurrencySeriesTestBuilder.defaultGbp().enabled(false).build();
-    repository.saveAll(List.of(eur, thb, gbp));
+    currencySeriesRepository.saveAll(List.of(eur, thb, gbp));
 
     // Execute
     performGet("/v1/currencies?enabledOnly=false")
@@ -156,7 +156,7 @@ class CurrencySeriesControllerTest extends AbstractControllerTest {
     // Setup: Save 2 disabled currencies only
     var gbp = CurrencySeriesTestBuilder.defaultGbp().enabled(false).build();
     var jpy = CurrencySeriesTestBuilder.defaultJpy().enabled(false).build();
-    repository.saveAll(List.of(gbp, jpy));
+    currencySeriesRepository.saveAll(List.of(gbp, jpy));
 
     // Execute
     performGet("/v1/currencies?enabledOnly=true")
@@ -175,7 +175,7 @@ class CurrencySeriesControllerTest extends AbstractControllerTest {
     var gbp = CurrencySeriesTestBuilder.defaultGbp().build();
     var jpy = CurrencySeriesTestBuilder.defaultJpy().build();
     var cad = CurrencySeriesTestBuilder.defaultCad().build();
-    repository.saveAll(List.of(eur, thb, gbp, jpy, cad));
+    currencySeriesRepository.saveAll(List.of(eur, thb, gbp, jpy, cad));
 
     // Execute
     performGet("/v1/currencies")
@@ -196,7 +196,7 @@ class CurrencySeriesControllerTest extends AbstractControllerTest {
   void shouldReturnCorrectResponseStructure() throws Exception {
     // Setup: Save 1 currency
     var eur = CurrencySeriesTestBuilder.defaultEur().build();
-    repository.save(eur);
+    currencySeriesRepository.save(eur);
 
     // Execute
     performGet("/v1/currencies")
@@ -229,7 +229,7 @@ class CurrencySeriesControllerTest extends AbstractControllerTest {
     var eur = CurrencySeriesTestBuilder.defaultEur().build();
     var thb = CurrencySeriesTestBuilder.defaultThb().build();
     var gbp = CurrencySeriesTestBuilder.defaultGbp().enabled(false).build();
-    repository.saveAll(List.of(eur, thb, gbp));
+    currencySeriesRepository.saveAll(List.of(eur, thb, gbp));
 
     // Test various true values
     performGet("/v1/currencies?enabledOnly=true")
@@ -251,7 +251,7 @@ class CurrencySeriesControllerTest extends AbstractControllerTest {
     var eur = CurrencySeriesTestBuilder.defaultEur().build();
     var thb = CurrencySeriesTestBuilder.defaultThb().build();
     var gbp = CurrencySeriesTestBuilder.defaultGbp().enabled(false).build();
-    repository.saveAll(List.of(eur, thb, gbp));
+    currencySeriesRepository.saveAll(List.of(eur, thb, gbp));
 
     // Test various false values
     performGet("/v1/currencies?enabledOnly=false")

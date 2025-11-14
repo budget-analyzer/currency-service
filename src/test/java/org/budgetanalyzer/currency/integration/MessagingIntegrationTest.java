@@ -1,6 +1,5 @@
 package org.budgetanalyzer.currency.integration;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -79,7 +78,7 @@ class MessagingIntegrationTest {
 
   private static final String QUEUE_NAME = "currency.created.exchange-rate-import-service";
   private static final String DLQ_NAME = "currency.created.exchange-rate-import-service.dlq";
-  private static final int WAIT_TIME = 5;
+  private static final int WAIT_TIME = 1;
 
   // ===========================================================================================
   // Dependencies
@@ -123,9 +122,12 @@ class MessagingIntegrationTest {
     jdbcTemplate.execute("DELETE FROM currency_series");
     jdbcTemplate.execute("DELETE FROM event_publication");
 
-    // Robust RabbitMQ queue cleanup with retry logic
-    purgeQueueSafely(QUEUE_NAME);
-    purgeQueueSafely(DLQ_NAME);
+    try {
+      rabbitAdmin.purgeQueue(QUEUE_NAME, false);
+      rabbitAdmin.purgeQueue(DLQ_NAME, false);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
 
     // Reset WireMock stubs to ensure test isolation
     wireMockServer.resetAll();
@@ -832,62 +834,5 @@ class MessagingIntegrationTest {
     return jdbcTemplate.queryForObject(
         "SELECT serialized_event FROM event_publication ORDER BY publication_date DESC LIMIT 1",
         String.class);
-  }
-
-  /**
-   * Safely purges a RabbitMQ queue with retry logic.
-   *
-   * <p>Uses Awaitility to handle timing issues where queues might not be immediately available
-   * after application startup.
-   *
-   * @param queueName the name of the queue to purge
-   */
-  private void purgeQueueSafely(String queueName) {
-    try {
-      await()
-          .atMost(3, SECONDS)
-          .pollDelay(100, MILLISECONDS)
-          .pollInterval(200, MILLISECONDS)
-          .ignoreExceptions()
-          .until(
-              () -> {
-                var props = rabbitAdmin.getQueueProperties(queueName);
-                var purged = rabbitAdmin.purgeQueue(queueName);
-
-                log.debug("Purged {} messages from queue: {}", purged, queueName);
-                return true;
-              });
-    } catch (Exception e) {
-      log.warn(
-          "Failed to purge queue: {}, reason: {}. This may be expected if queue doesn't exist yet.",
-          queueName,
-          e.getMessage());
-    }
-  }
-
-  /**
-   * Ensures queues are empty before test execution begins.
-   *
-   * <p>This verification step is critical to prevent race conditions where messages from previous
-   * test runs can interfere with current test assertions.
-   */
-  private void ensureQueuesEmpty() {
-    try {
-      await()
-          .atMost(3, SECONDS)
-          .pollInterval(200, MILLISECONDS)
-          .ignoreExceptions()
-          .untilAsserted(
-              () -> {
-                var props = rabbitAdmin.getQueueProperties(QUEUE_NAME);
-                var messageCount = (Integer) props.get(RabbitAdmin.QUEUE_MESSAGE_COUNT);
-
-                assertThat(messageCount)
-                    .as("Queue %s should be empty before test", QUEUE_NAME)
-                    .isZero();
-              });
-    } catch (Exception e) {
-      log.warn("Could not verify queue emptiness for: {}. Queue may not exist yet.", QUEUE_NAME);
-    }
   }
 }

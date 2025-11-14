@@ -2,7 +2,6 @@ package org.budgetanalyzer.currency.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,18 +63,6 @@ class DomainEventPublishingIntegrationTest extends AbstractWireMockTest {
   @Autowired private CurrencyService currencyService;
 
   @Autowired private WireMockServer wireMockServer;
-
-  /** Cleanup database and reset WireMock stubs before each test. */
-  @BeforeEach
-  void cleanup() {
-    // Clear database tables
-    jdbcTemplate.execute("DELETE FROM exchange_rate");
-    jdbcTemplate.execute("DELETE FROM currency_series");
-    jdbcTemplate.execute("DELETE FROM event_publication");
-
-    // Reset all WireMock stubs
-    wireMockServer.resetAll();
-  }
 
   // ===========================================================================================
   // Event Publishing Tests (3 tests)

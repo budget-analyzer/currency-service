@@ -3,7 +3,6 @@ package org.budgetanalyzer.currency.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,21 +56,6 @@ class CurrencyServiceIntegrationTest extends AbstractWireMockTest {
   @Autowired private JdbcTemplate jdbcTemplate;
 
   @Autowired private WireMockServer wireMockServer;
-
-  // ===========================================================================================
-  // Setup and Cleanup
-  // ===========================================================================================
-
-  @BeforeEach
-  void setUp() {
-    // Clear database tables
-    jdbcTemplate.execute("DELETE FROM exchange_rate");
-    jdbcTemplate.execute("DELETE FROM currency_series");
-    jdbcTemplate.execute("DELETE FROM event_publication");
-
-    // Reset all WireMock stubs
-    wireMockServer.resetAll();
-  }
 
   // ===========================================================================================
   // A. Create Operations - Happy Paths

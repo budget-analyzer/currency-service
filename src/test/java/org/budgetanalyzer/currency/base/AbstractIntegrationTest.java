@@ -71,8 +71,7 @@ import org.budgetanalyzer.currency.config.TestContainersConfig;
 public abstract class AbstractIntegrationTest {
   // All container configuration is in TestContainersConfiguration
 
-  @Autowired(required = false)
-  private JdbcTemplate jdbcTemplate;
+  @Autowired protected JdbcTemplate jdbcTemplate;
 
   /**
    * Cleans up all test data before each test and restores seed data.
@@ -85,17 +84,15 @@ public abstract class AbstractIntegrationTest {
    * contexts.
    */
   @BeforeEach
-  void cleanupDatabase() {
-    if (jdbcTemplate != null) {
-      // Delete in correct order to avoid FK constraint violations
-      // exchange_rate has FK to currency_series, so delete it first
-      jdbcTemplate.execute("DELETE FROM exchange_rate");
-      jdbcTemplate.execute("DELETE FROM currency_series");
-      jdbcTemplate.execute("DELETE FROM event_publication");
+  protected void resetSeedDatabase() {
+    // Delete in correct order to avoid FK constraint violations
+    // exchange_rate has FK to currency_series, so delete it first
+    jdbcTemplate.execute("DELETE FROM exchange_rate");
+    jdbcTemplate.execute("DELETE FROM currency_series");
+    jdbcTemplate.execute("DELETE FROM event_publication");
 
-      // Restore seed data from V6 migration
-      restoreSeedData();
-    }
+    // Restore seed data from V6 migration
+    restoreSeedData();
   }
 
   /**

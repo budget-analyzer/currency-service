@@ -38,13 +38,15 @@ public abstract class AbstractWireMockTest extends AbstractIntegrationTest {
         () -> "http://localhost:" + wireMock.port());
   }
 
-  /**
-   * Resets WireMock stubs before each test to ensure isolation.
-   *
-   * <p>Removes all previously configured stubs and request history.
-   */
+  /** Cleanup database and reset WireMock stubs before each test. */
   @BeforeEach
-  void resetWireMock() {
+  protected void resetDatabaseAndWireMock() {
+    // Clear database tables
+    jdbcTemplate.execute("DELETE FROM exchange_rate");
+    jdbcTemplate.execute("DELETE FROM currency_series");
+    jdbcTemplate.execute("DELETE FROM event_publication");
+
+    // Reset all WireMock stubs
     wireMockServer.resetAll();
   }
 }

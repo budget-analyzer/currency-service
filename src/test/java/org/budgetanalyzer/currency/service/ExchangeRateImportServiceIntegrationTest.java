@@ -72,16 +72,10 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
 
   @BeforeEach
   void setUp() {
-    // Clear database tables
-    jdbcTemplate.execute("DELETE FROM exchange_rate");
-    jdbcTemplate.execute("DELETE FROM currency_series");
-    jdbcTemplate.execute("DELETE FROM event_publication");
+    super.resetDatabaseAndWireMock();
 
     // Clear cache for test isolation
     cacheManager.getCache(CacheConfig.EXCHANGE_RATES_CACHE).clear();
-
-    // Reset all WireMock stubs
-    wireMockServer.resetAll();
   }
 
   // ===========================================================================================

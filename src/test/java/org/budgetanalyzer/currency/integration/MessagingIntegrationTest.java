@@ -92,10 +92,7 @@ class MessagingIntegrationTest extends AbstractWireMockTest {
   /** Cleanup database and RabbitMQ queues before each test. */
   @BeforeEach
   void cleanup() {
-    // Clear database tables
-    jdbcTemplate.execute("DELETE FROM exchange_rate");
-    jdbcTemplate.execute("DELETE FROM currency_series");
-    jdbcTemplate.execute("DELETE FROM event_publication");
+    super.resetDatabaseAndWireMock();
 
     try {
       rabbitAdmin.purgeQueue(QUEUE_NAME, false);
@@ -103,9 +100,6 @@ class MessagingIntegrationTest extends AbstractWireMockTest {
     } catch (Exception e) {
       e.printStackTrace();
     }
-
-    // Reset WireMock stubs to ensure test isolation
-    wireMockServer.resetAll();
 
     // Clear MDC
     MDC.clear();

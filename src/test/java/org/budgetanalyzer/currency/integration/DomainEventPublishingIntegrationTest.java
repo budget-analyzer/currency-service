@@ -52,7 +52,7 @@ import org.budgetanalyzer.currency.service.CurrencyService;
  */
 @DisplayName("Modulith Outbox Domain Events Integration Tests")
 @EnableScenarios
-class DomainEventPublishingIntegrationTest extends AbstractWireMockTest {
+public class DomainEventPublishingIntegrationTest extends AbstractWireMockTest {
 
   // ===========================================================================================
   // Dependencies

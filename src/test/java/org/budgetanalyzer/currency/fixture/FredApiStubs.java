@@ -105,9 +105,9 @@ public final class FredApiStubs {
   }
 
   /**
-   * Stubs a successful FRED API response with sample EUR data.
+   * Stubs a successful FRED API response with sample data.
    *
-   * <p>Returns 10 days of EUR/USD exchange rates (Jan 1-10, 2024) with realistic values.
+   * <p>Returns 10 days of exchange rates (Jan 1-10, 2024) with realistic values.
    */
   public static void stubSuccessWithSampleData(String seriesId) {
     var observations = new ArrayList<Observation>();
@@ -230,6 +230,86 @@ public final class FredApiStubs {
                         .withStatus(TestConstants.HTTP_INTERNAL_SERVER_ERROR)
                         .withHeader("Content-Type", "application/json")
                         .withBody(errorResponse)));
+  }
+
+  /**
+   * Stubs a 500 Internal Server Error response for any series ID.
+   *
+   * <p>Use this for retry testing where you want all observation requests to fail regardless of
+   * series ID.
+   */
+  public static void stubServerErrorForAll() {
+    var errorResponse =
+        buildFredErrorResponse(
+            TestConstants.HTTP_INTERNAL_SERVER_ERROR,
+            "Internal Server Error. Please try again later.");
+    getWireMockServer()
+        .stubFor(
+            get(urlPathEqualTo(TestConstants.FRED_API_PATH_OBSERVATIONS))
+                .willReturn(
+                    aResponse()
+                        .withStatus(TestConstants.HTTP_INTERNAL_SERVER_ERROR)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(errorResponse)));
+  }
+
+  /**
+   * Stubs a recovery scenario where FRED API fails twice, then succeeds.
+   *
+   * <p>Use this to test retry logic and eventual recovery from transient failures.
+   *
+   * <p>Sequence:
+   *
+   * <ul>
+   *   <li>1st attempt: 500 Internal Server Error
+   *   <li>2nd attempt: 500 Internal Server Error
+   *   <li>3rd attempt: 200 OK with sample data (10 days of EUR data)
+   * </ul>
+   *
+   * @param seriesId the FRED series ID
+   */
+  public static void stubRecoveryScenario(String seriesId) {
+    var errorResponse =
+        buildFredErrorResponse(TestConstants.HTTP_INTERNAL_SERVER_ERROR, "Internal Server Error");
+    var successResponse = buildFredSuccessResponse(seriesId, buildSampleObservations());
+
+    // First attempt fails
+    getWireMockServer()
+        .stubFor(
+            get(urlPathEqualTo(TestConstants.FRED_API_PATH_OBSERVATIONS))
+                .inScenario("Recovery")
+                .whenScenarioStateIs("Started")
+                .willReturn(
+                    aResponse()
+                        .withStatus(TestConstants.HTTP_INTERNAL_SERVER_ERROR)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(errorResponse))
+                .willSetStateTo("First Retry"));
+
+    // Second attempt fails
+    getWireMockServer()
+        .stubFor(
+            get(urlPathEqualTo(TestConstants.FRED_API_PATH_OBSERVATIONS))
+                .inScenario("Recovery")
+                .whenScenarioStateIs("First Retry")
+                .willReturn(
+                    aResponse()
+                        .withStatus(TestConstants.HTTP_INTERNAL_SERVER_ERROR)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(errorResponse))
+                .willSetStateTo("Second Retry"));
+
+    // Third attempt succeeds
+    getWireMockServer()
+        .stubFor(
+            get(urlPathEqualTo(TestConstants.FRED_API_PATH_OBSERVATIONS))
+                .inScenario("Recovery")
+                .whenScenarioStateIs("Second Retry")
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(successResponse)));
   }
 
   /**
@@ -472,6 +552,35 @@ public final class FredApiStubs {
   // ===========================================================================================
   // Helper Methods
   // ===========================================================================================
+
+  /**
+   * Builds sample observations for testing (10 days starting from Jan 1, 2024).
+   *
+   * <p>Returns 10 days of EUR/USD exchange rates (Jan 1-10, 2024) with realistic values. Weekends
+   * have missing data (value=".").
+   *
+   * @return list of sample observations
+   */
+  private static List<Observation> buildSampleObservations() {
+    var observations = new ArrayList<Observation>();
+    var startDate = TestConstants.DATE_2024_JAN_01;
+
+    for (int i = 0; i < 10; i++) {
+      var date = startDate.plusDays(i);
+      var dayOfWeek = date.getDayOfWeek();
+
+      if (dayOfWeek.getValue() <= 5) {
+        // Weekday: provide rate
+        var rate = String.format("0.%04d", 8500 + i * 10); // 0.8500, 0.8510, ...
+        observations.add(new Observation(date.toString(), rate));
+      } else {
+        // Weekend: missing data
+        observations.add(new Observation(date.toString(), TestConstants.FRED_MISSING_DATA_VALUE));
+      }
+    }
+
+    return observations;
+  }
 
   /**
    * Builds a complete FRED API success response JSON.

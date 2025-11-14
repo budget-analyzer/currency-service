@@ -41,7 +41,7 @@ import org.budgetanalyzer.currency.repository.CurrencySeriesRepository;
  * </ul>
  */
 @DisplayName("Currency Series Controller Integration Tests")
-class CurrencySeriesControllerTest extends AbstractControllerTest {
+public class CurrencySeriesControllerTest extends AbstractControllerTest {
 
   @Autowired private CurrencySeriesRepository currencySeriesRepository;
 

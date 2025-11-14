@@ -65,7 +65,7 @@ import org.budgetanalyzer.service.http.CorrelationIdFilter;
  * @see org.springframework.boot.test.context.SpringBootTest
  */
 @DisplayName("RabbitMQ Messaging Integration Tests")
-class MessagingIntegrationTest extends AbstractWireMockTest {
+public class MessagingIntegrationTest extends AbstractWireMockTest {
 
   // Queue names are dynamically generated per test run: currency.created.test-{random-uuid}
   // We discover them at runtime instead of hardcoding

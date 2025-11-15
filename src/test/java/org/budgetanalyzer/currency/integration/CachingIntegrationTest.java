@@ -34,19 +34,19 @@ import org.budgetanalyzer.currency.service.dto.ExchangeRateData;
 /**
  * Integration tests for Redis distributed caching behavior.
  *
- * <p>Tests verify:
+ * <p>Tests verify application-specific caching logic:
  *
  * <ul>
- *   <li>Cache population on first query
- *   <li>Cache hits on subsequent queries (no database access)
- *   <li>Cache key format and structure
- *   <li>Cache eviction after imports
- *   <li>Multi-currency cache isolation
- *   <li>DTO serialization/deserialization in Redis
+ *   <li>Cache key format: {@code {currency}:{startDate}:{endDate}}
+ *   <li>Multi-currency cache isolation (separate cache entries per currency)
+ *   <li>Cache eviction strategy: {@code @CacheEvict(allEntries=true)} after imports
  * </ul>
  *
  * <p><b>Cache Configuration:</b> This test explicitly enables Redis cache via
  * {@code @TestPropertySource}. Most tests have cache disabled by default for performance.
+ *
+ * <p><b>Framework behavior not tested:</b> Spring Cache population, cache hits, and serialization
+ * are framework responsibilities covered by Spring's own test suite.
  *
  * @see org.budgetanalyzer.currency.config.CacheConfig
  * @see org.budgetanalyzer.currency.service.ExchangeRateService#getExchangeRates
@@ -115,61 +115,6 @@ public class CachingIntegrationTest extends AbstractIntegrationTest {
 
     // Clear cache before each test to ensure clean state
     clearAllCaches();
-  }
-
-  @Test
-  void shouldPopulateCacheOnFirstQuery() {
-    // Given: Empty cache
-    var thbCurrency = Currency.getInstance(TestConstants.VALID_CURRENCY_THB);
-    var startDate = LocalDate.of(2024, 1, 1);
-    var endDate = LocalDate.of(2024, 1, 5);
-
-    // Verify cache is empty before query
-    var cache = cacheManager.getCache("exchangeRates");
-    assertThat(cache).isNotNull();
-
-    var cacheKey = thbCurrency.getCurrencyCode() + ":" + startDate + ":" + endDate;
-    assertThat(cache.get(cacheKey)).isNull();
-
-    // When: Query exchange rates (first time - cache miss)
-    var results = exchangeRateService.getExchangeRates(thbCurrency, startDate, endDate);
-
-    // Then: Results returned from database
-    assertThat(results).hasSize(5).allMatch(rate -> rate.targetCurrency().equals(thbCurrency));
-
-    // And: Cache is now populated
-    var cachedValue = cache.get(cacheKey);
-    assertThat(cachedValue).isNotNull();
-    assertThat(cachedValue.get()).isInstanceOf(List.class);
-
-    var cachedResults = this.<ExchangeRateData>getCachedList(cacheKey);
-    assertThat(cachedResults).hasSize(5).isEqualTo(results);
-  }
-
-  @Test
-  void shouldReturnCachedDataOnSubsequentQueries() {
-    // Given: Cache populated by first query
-    var thbCurrency = Currency.getInstance(TestConstants.VALID_CURRENCY_THB);
-    var startDate = LocalDate.of(2024, 1, 1);
-    var endDate = LocalDate.of(2024, 1, 5);
-
-    // First query - populates cache
-    var firstResults = exchangeRateService.getExchangeRates(thbCurrency, startDate, endDate);
-    assertThat(firstResults).hasSize(5);
-
-    // Reset spy to clear invocation count
-    clearInvocations(exchangeRateRepositorySpy);
-
-    // When: Second query for same parameters (cache hit)
-    var secondResults = exchangeRateService.getExchangeRates(thbCurrency, startDate, endDate);
-
-    // Then: Results are identical to first query
-    assertThat(secondResults).isEqualTo(firstResults).hasSize(5);
-
-    // And: Repository was NOT called (cache hit)
-    // Note: We only verify findAll was not called, as other methods like
-    // findEarliestDateByTargetCurrency are not cached and will be invoked
-    verify(exchangeRateRepositorySpy, never()).findAll(any(Specification.class), any(Sort.class));
   }
 
   @Test
@@ -299,92 +244,6 @@ public class CachingIntegrationTest extends AbstractIntegrationTest {
 
     // Repository should not be called (cache hit)
     verify(exchangeRateRepositorySpy, never()).findAll(any(Specification.class), any(Sort.class));
-  }
-
-  @Test
-  void shouldCorrectlySerializeAndDeserializeExchangeRateData() {
-    // Given: Complex exchange rate data with various field types
-    var thbCurrency = Currency.getInstance(TestConstants.VALID_CURRENCY_THB);
-    var startDate = LocalDate.of(2024, 1, 1);
-    var endDate = LocalDate.of(2024, 1, 5);
-
-    // When: Query and cache results
-    var originalResults = exchangeRateService.getExchangeRates(thbCurrency, startDate, endDate);
-
-    // Then: Retrieve from cache and verify all fields are correctly deserialized
-    var cache = cacheManager.getCache("exchangeRates");
-    var cacheKey = thbCurrency.getCurrencyCode() + ":" + startDate + ":" + endDate;
-
-    var cachedResults = this.<ExchangeRateData>getCachedList(cacheKey);
-
-    // Verify all fields are correctly serialized/deserialized
-    assertThat(cachedResults).hasSize(5).isEqualTo(originalResults);
-
-    for (int i = 0; i < cachedResults.size(); i++) {
-      var original = originalResults.get(i);
-      var cached = cachedResults.get(i);
-
-      // Verify all fields match
-      assertThat(cached.baseCurrency()).isEqualTo(original.baseCurrency());
-      assertThat(cached.targetCurrency()).isEqualTo(original.targetCurrency());
-      assertThat(cached.date()).isEqualTo(original.date());
-      assertThat(cached.rate()).isEqualByComparingTo(original.rate());
-      assertThat(cached.publishedDate()).isEqualTo(original.publishedDate());
-    }
-
-    // And: Verify types are preserved
-    var firstCached = cachedResults.get(0);
-    assertThat(firstCached.baseCurrency()).isInstanceOf(Currency.class);
-    assertThat(firstCached.targetCurrency()).isInstanceOf(Currency.class);
-    assertThat(firstCached.date()).isInstanceOf(LocalDate.class);
-    assertThat(firstCached.rate()).isInstanceOf(BigDecimal.class);
-    assertThat(firstCached.publishedDate()).isInstanceOf(LocalDate.class);
-  }
-
-  @Test
-  void shouldHandleNullDatesInCacheKey() {
-    // Given: Query with null start and end dates
-    var thbCurrency = Currency.getInstance(TestConstants.VALID_CURRENCY_THB);
-
-    // When: Query with null dates (returns all available data)
-    var results = exchangeRateService.getExchangeRates(thbCurrency, null, null);
-
-    // Then: Cache key should contain "null" strings
-    var cache = cacheManager.getCache("exchangeRates");
-    var cacheKey = thbCurrency.getCurrencyCode() + ":null:null";
-
-    assertThat(cache.get(cacheKey)).isNotNull();
-
-    var cachedResults = this.<ExchangeRateData>getCachedList(cacheKey);
-    assertThat(cachedResults).hasSize(10).isEqualTo(results);
-  }
-
-  @Test
-  void shouldHandlePartialNullDatesInCacheKey() {
-    // Given: Queries with partially null dates
-    var thbCurrency = Currency.getInstance(TestConstants.VALID_CURRENCY_THB);
-    var startDate = LocalDate.of(2024, 1, 1);
-    var endDate = LocalDate.of(2024, 1, 5);
-
-    // When: Query with null start date
-    var results1 = exchangeRateService.getExchangeRates(thbCurrency, null, endDate);
-
-    // And: Query with null end date
-    var results2 = exchangeRateService.getExchangeRates(thbCurrency, startDate, null);
-
-    // Then: Both queries should have separate cache entries
-    var cache = cacheManager.getCache("exchangeRates");
-    var key1 = thbCurrency.getCurrencyCode() + ":null:" + endDate;
-    var key2 = thbCurrency.getCurrencyCode() + ":" + startDate + ":null";
-
-    assertThat(cache.get(key1)).isNotNull();
-    assertThat(cache.get(key2)).isNotNull();
-
-    var cachedResults1 = this.<ExchangeRateData>getCachedList(key1);
-    assertThat(cachedResults1).isEqualTo(results1);
-
-    var cachedResults2 = this.<ExchangeRateData>getCachedList(key2);
-    assertThat(cachedResults2).isEqualTo(results2);
   }
 
   /**

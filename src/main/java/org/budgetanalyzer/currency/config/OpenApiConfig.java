@@ -25,7 +25,7 @@ import org.budgetanalyzer.service.config.BaseOpenApiConfig;
       @Server(
           url = "http://localhost:8084/currency-service",
           description = "Local environment (direct)"),
-      @Server(url = "https://api.budgetanalyzer.io, description = "Production environment")
+      @Server(url = "https://api.budgetanalyzer.org", description = "Production environment")
     },
     externalDocs =
         @ExternalDocumentation(

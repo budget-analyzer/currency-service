@@ -1,5 +1,11 @@
 logging:
   level:
+    # Test classes
+    org.budgetanalyzer.currency: INFO
+
+    # Spring scheduling - DEBUG to see scheduler registration and execution
+    org.springframework.scheduling: DEBUG
+
     # Transaction lifecycle - shows begin/commit/rollback
     org.springframework.transaction: DEBUG
     org.springframework.orm.jpa: DEBUG
@@ -21,6 +27,9 @@ logging:
     # RabbitMQ - shows message delivery timing
     org.springframework.amqp.rabbit.listener: DEBUG
     org.springframework.amqp.rabbit.connection: DEBUG
+
+    # ShedLock
+    net.javacrumbs.shedlock: DEBUG
 
 spring:
   flyway:

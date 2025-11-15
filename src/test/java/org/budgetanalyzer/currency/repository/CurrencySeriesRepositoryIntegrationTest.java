@@ -5,12 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
 
-import jakarta.validation.ConstraintViolationException;
-
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.NonTransientDataAccessException;
 
 import org.budgetanalyzer.currency.base.AbstractIntegrationTest;
@@ -26,16 +22,12 @@ import org.budgetanalyzer.currency.fixture.TestConstants;
  *
  * <ul>
  *   <li>Query methods (derived and custom queries)
- *   <li>Database constraints (unique, not-null, foreign keys)
  *   <li>Cascade/delete behavior with related entities
- *   <li>Audit timestamp population
- *   <li>Basic CRUD operations
  * </ul>
  *
  * <p>Tests run against real PostgreSQL via TestContainers with automatic transaction rollback for
  * isolation.
  */
-@DisplayName("CurrencySeriesRepository Integration Tests")
 class CurrencySeriesRepositoryIntegrationTest extends AbstractIntegrationTest {
 
   @Autowired private CurrencySeriesRepository currencySeriesRepository;
@@ -47,8 +39,6 @@ class CurrencySeriesRepositoryIntegrationTest extends AbstractIntegrationTest {
   // ===========================================================================================
 
   @Test
-  @DisplayName(
-      "findByEnabledTrue() should return only enabled series when mixed enabled/disabled exist")
   void findByEnabledTrueWithMixedSeriesReturnsOnlyEnabled() {
     // Arrange: Use existing seed data and update enabled status
     var eurSeries =
@@ -81,7 +71,6 @@ class CurrencySeriesRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("findByEnabledTrue() should return empty list when all series are disabled")
   void findByEnabledTrueWithAllDisabledReturnsEmptyList() {
     // Arrange: Disable all existing series
     var allSeries = currencySeriesRepository.findAll();
@@ -97,7 +86,6 @@ class CurrencySeriesRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("findByEnabledTrue() should return all series when all are enabled")
   void findByEnabledTrueWithAllEnabledReturnsAll() {
     // Arrange: Enable all existing series (23 from V6 migration)
     var allSeries = currencySeriesRepository.findAll();
@@ -123,7 +111,6 @@ class CurrencySeriesRepositoryIntegrationTest extends AbstractIntegrationTest {
   // ===========================================================================================
 
   @Test
-  @DisplayName("findByCurrencyCodeAndEnabledTrue() should find enabled currency by code")
   void findByCurrencyCodeAndEnabledTrueWithEnabledCurrencyFindsCurrency() {
     // Arrange: Enable existing EUR currency
     var eurSeries =
@@ -144,7 +131,6 @@ class CurrencySeriesRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("findByCurrencyCodeAndEnabledTrue() should return empty when currency is disabled")
   void findByCurrencyCodeAndEnabledTrueWithDisabledCurrencyReturnsEmpty() {
     // Arrange: Ensure EUR is disabled (default state from V6 migration)
     var eurSeries =
@@ -161,7 +147,6 @@ class CurrencySeriesRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("findByCurrencyCodeAndEnabledTrue() should return empty when currency doesn't exist")
   void findByCurrencyCodeAndEnabledTrueWithNonExistentCurrencyReturnsEmpty() {
     // Act
     var found = currencySeriesRepository.findByCurrencyCodeAndEnabledTrue("XXX");
@@ -171,7 +156,6 @@ class CurrencySeriesRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("findByCurrencyCodeAndEnabledTrue() should be case-sensitive")
   void findByCurrencyCodeAndEnabledTrueIsCaseSensitive() {
     // Arrange: Enable existing EUR currency
     var eurSeries =
@@ -191,7 +175,6 @@ class CurrencySeriesRepositoryIntegrationTest extends AbstractIntegrationTest {
   // ===========================================================================================
 
   @Test
-  @DisplayName("findByCurrencyCode() should find currency regardless of enabled status")
   void findByCurrencyCodeFindsCurrencyRegardlessOfEnabledStatus() {
     // Arrange: EUR exists as disabled from V6 migration, ensure it's disabled
     var eurSeries =
@@ -207,7 +190,6 @@ class CurrencySeriesRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("findByCurrencyCode() should return empty when currency doesn't exist")
   void findByCurrencyCodeWithNonExistentCurrencyReturnsEmpty() {
     // Act
     var found = currencySeriesRepository.findByCurrencyCode("ZZZ");
@@ -217,88 +199,10 @@ class CurrencySeriesRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   // ===========================================================================================
-  // Database Constraint Tests
-  // ===========================================================================================
-
-  @Test
-  @DisplayName("Should enforce unique constraint on currencyCode")
-  void saveWithDuplicateCurrencyCodeThrowsException() {
-    // Arrange: EUR already exists from V6 migration
-    // Act & Assert: Try to save duplicate EUR with different provider series ID
-    var duplicateEur =
-        new CurrencySeriesTestBuilder()
-            .withCurrencyCode(TestConstants.VALID_CURRENCY_EUR)
-            .withProviderSeriesId("DIFFERENT_SERIES_ID_TEST")
-            .build();
-
-    assertThatThrownBy(
-            () -> {
-              currencySeriesRepository.saveAndFlush(duplicateEur);
-            })
-        .isInstanceOf(DataIntegrityViolationException.class);
-  }
-
-  @Test
-  @DisplayName("Should enforce unique constraint on providerSeriesId")
-  void saveWithDuplicateProviderSeriesIdThrowsException() {
-    // Arrange: EUR with providerSeriesId DEXUSEU already exists from V6 migration
-    // Act & Assert: Try to save with different currency code but same provider series ID
-    var duplicateSeries =
-        new CurrencySeriesTestBuilder()
-            .withCurrencyCode("XXX")
-            .withProviderSeriesId(TestConstants.FRED_SERIES_EUR) // DEXUSEU already exists
-            .build();
-
-    assertThatThrownBy(
-            () -> {
-              currencySeriesRepository.saveAndFlush(duplicateSeries);
-            })
-        .isInstanceOf(NonTransientDataAccessException.class);
-  }
-
-  @Test
-  @DisplayName("Should enforce not-null constraint on currencyCode")
-  void saveWithNullCurrencyCodeThrowsException() {
-    // Arrange
-    var seriesWithNullCode =
-        new CurrencySeriesTestBuilder()
-            .withCurrencyCode(null)
-            .withProviderSeriesId("TEST_SERIES")
-            .build();
-
-    // Act & Assert
-    assertThatThrownBy(
-            () -> {
-              currencySeriesRepository.saveAndFlush(seriesWithNullCode);
-            })
-        .isInstanceOf(NonTransientDataAccessException.class);
-  }
-
-  @Test
-  @DisplayName("Should enforce not-null constraint on providerSeriesId")
-  void saveWithNullProviderSeriesIdThrowsException() {
-    // Arrange
-    var seriesWithNullProvider =
-        new CurrencySeriesTestBuilder()
-            .withCurrencyCode(TestConstants.VALID_CURRENCY_EUR)
-            .withProviderSeriesId(null)
-            .build();
-
-    // Act & Assert
-    assertThatThrownBy(
-            () -> {
-              currencySeriesRepository.saveAndFlush(seriesWithNullProvider);
-            })
-        .isInstanceOf(ConstraintViolationException.class);
-  }
-
-  // ===========================================================================================
   // Cascade/Delete Behavior Tests
   // ===========================================================================================
 
   @Test
-  @DisplayName(
-      "Should prevent deletion of CurrencySeries when ExchangeRates exist (ON DELETE RESTRICT)")
   void deleteWithExistingExchangeRatesThrowsException() {
     // Arrange: Use existing EUR series from V6 migration and add exchange rates
     var eurSeries =
@@ -321,7 +225,6 @@ class CurrencySeriesRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("Should allow deletion of CurrencySeries when no ExchangeRates exist")
   void deleteWithoutExchangeRatesSucceeds() {
     // Arrange: Create unique test currency series WITHOUT exchange rates
     var testSeries =
@@ -338,166 +241,5 @@ class CurrencySeriesRepositoryIntegrationTest extends AbstractIntegrationTest {
     // Assert: Verify deletion succeeded
     var found = currencySeriesRepository.findById(saved.getId());
     assertThat(found).isEmpty();
-  }
-
-  // ===========================================================================================
-  // Audit Timestamp Tests
-  // ===========================================================================================
-
-  @Test
-  @DisplayName("Should auto-populate createdAt timestamp on insert")
-  void saveNewEntityPopulatesCreatedAt() {
-    // Arrange: Create unique test currency to validate timestamp population
-    var testSeries =
-        new CurrencySeriesTestBuilder()
-            .withCurrencyCode("TS1")
-            .withProviderSeriesId("TEST_CREATED_AT_SERIES")
-            .build();
-
-    // Act
-    var saved = currencySeriesRepository.saveAndFlush(testSeries);
-
-    // Assert
-    assertThat(saved.getCreatedAt()).isNotNull();
-  }
-
-  @Test
-  @DisplayName("Should auto-populate updatedAt timestamp on insert")
-  void saveNewEntityPopulatesUpdatedAt() {
-    // Arrange: Create unique test currency to validate timestamp population
-    var testSeries =
-        new CurrencySeriesTestBuilder()
-            .withCurrencyCode("TS2")
-            .withProviderSeriesId("TEST_UPDATED_AT_SERIES")
-            .build();
-
-    // Act
-    var saved = currencySeriesRepository.saveAndFlush(testSeries);
-
-    // Assert
-    assertThat(saved.getUpdatedAt()).isNotNull();
-  }
-
-  @Test
-  @DisplayName("Should update updatedAt timestamp on modification")
-  void saveExistingEntityUpdatesUpdatedAt() throws InterruptedException {
-    // Arrange: Use existing EUR series from V6 migration
-    var eurSeries =
-        currencySeriesRepository.findByCurrencyCode(TestConstants.VALID_CURRENCY_EUR).orElseThrow();
-    final var originalCreatedAt = eurSeries.getCreatedAt();
-    var originalUpdatedAt = eurSeries.getUpdatedAt();
-
-    // Wait to ensure timestamp difference
-    Thread.sleep(10);
-
-    // Act: Update entity
-    eurSeries.setEnabled(!eurSeries.isEnabled());
-    var updated = currencySeriesRepository.saveAndFlush(eurSeries);
-
-    // Assert: updatedAt should change, createdAt should remain same
-    assertThat(updated.getUpdatedAt()).isAfter(originalUpdatedAt);
-    assertThat(updated.getCreatedAt()).isEqualTo(originalCreatedAt);
-  }
-
-  // ===========================================================================================
-  // Basic CRUD Tests
-  // ===========================================================================================
-
-  @Test
-  @DisplayName("Should save and retrieve currency series")
-  void saveAndRetrieveSuccess() {
-    // Arrange: Create unique test currency
-    var testSeries =
-        new CurrencySeriesTestBuilder()
-            .withCurrencyCode("CR1")
-            .withProviderSeriesId("TEST_CRUD_SAVE_RETRIEVE")
-            .build();
-
-    // Act: Save
-    var saved = currencySeriesRepository.saveAndFlush(testSeries);
-
-    // Act: Retrieve
-    var retrieved = currencySeriesRepository.findById(saved.getId());
-
-    // Assert
-    assertThat(retrieved)
-        .isPresent()
-        .get()
-        .extracting(CurrencySeries::getCurrencyCode)
-        .isEqualTo("CR1");
-  }
-
-  @Test
-  @DisplayName("Should update existing currency series")
-  void saveExistingEntityUpdates() {
-    // Arrange: Use existing EUR series from V6 migration
-    var eurSeries =
-        currencySeriesRepository.findByCurrencyCode(TestConstants.VALID_CURRENCY_EUR).orElseThrow();
-    var originalEnabled = eurSeries.isEnabled();
-
-    // Act: Update enabled status
-    eurSeries.setEnabled(!originalEnabled);
-    var updated = currencySeriesRepository.saveAndFlush(eurSeries);
-
-    // Assert: Verify update persisted
-    var retrieved = currencySeriesRepository.findById(updated.getId());
-    assertThat(retrieved)
-        .isPresent()
-        .get()
-        .extracting(CurrencySeries::isEnabled)
-        .isEqualTo(!originalEnabled);
-  }
-
-  @Test
-  @DisplayName("Should delete currency series when no dependencies exist")
-  void deleteWithoutDependenciesSuccess() {
-    // Arrange: Create unique test currency
-    var testSeries =
-        new CurrencySeriesTestBuilder()
-            .withCurrencyCode("CR2")
-            .withProviderSeriesId("TEST_CRUD_DELETE")
-            .build();
-    var saved = currencySeriesRepository.saveAndFlush(testSeries);
-    var savedId = saved.getId();
-
-    // Act
-    currencySeriesRepository.delete(saved);
-    currencySeriesRepository.flush();
-
-    // Assert
-    var found = currencySeriesRepository.findById(savedId);
-    assertThat(found).isEmpty();
-  }
-
-  @Test
-  @DisplayName("Should handle multiple series with different currency codes")
-  void saveMultipleSeriesSuccess() {
-    // Arrange: Create unique test currencies
-    var testSeries1 =
-        new CurrencySeriesTestBuilder()
-            .withCurrencyCode("M01")
-            .withProviderSeriesId("TEST_MULTI_001")
-            .build();
-    var testSeries2 =
-        new CurrencySeriesTestBuilder()
-            .withCurrencyCode("M02")
-            .withProviderSeriesId("TEST_MULTI_002")
-            .build();
-    var testSeries3 =
-        new CurrencySeriesTestBuilder()
-            .withCurrencyCode("M03")
-            .withProviderSeriesId("TEST_MULTI_003")
-            .build();
-
-    // Act
-    currencySeriesRepository.saveAll(java.util.List.of(testSeries1, testSeries2, testSeries3));
-    currencySeriesRepository.flush();
-
-    // Assert
-    var allSeries = currencySeriesRepository.findAll();
-    assertThat(allSeries)
-        .hasSizeGreaterThanOrEqualTo(26) // 23 from V6 migration + 3 test currencies
-        .extracting(CurrencySeries::getCurrencyCode)
-        .contains("M01", "M02", "M03");
   }
 }

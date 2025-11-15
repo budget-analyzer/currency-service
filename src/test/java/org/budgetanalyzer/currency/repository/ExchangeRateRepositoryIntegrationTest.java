@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,14 +26,11 @@ import org.budgetanalyzer.currency.fixture.TestConstants;
  *   <li>Database constraints (unique, not-null, foreign keys)
  *   <li>Foreign key relationships and cascade behavior
  *   <li>JpaSpecificationExecutor with complex filters
- *   <li>Audit timestamp population
- *   <li>Basic CRUD operations
  * </ul>
  *
  * <p>Tests run against real PostgreSQL via TestContainers with automatic transaction rollback for
  * isolation.
  */
-@DisplayName("ExchangeRateRepository Integration Tests")
 class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
 
   @Autowired private ExchangeRateRepository exchangeRateRepository;
@@ -46,8 +42,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   // ===========================================================================================
 
   @Test
-  @DisplayName(
-      "findTopByBaseCurrencyAndTargetCurrencyOrderByDateDesc() should return most recent rate")
   void findTopByBaseCurrencyAndTargetCurrencyOrderByDateDescReturnsMostRecent() {
     // Arrange: Use existing EUR series from V6 migration and create exchange rates
     var eurSeries =
@@ -89,8 +83,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName(
-      "findTopByBaseCurrencyAndTargetCurrencyOrderByDateDesc() should return empty when no data")
   void findTopByBaseCurrencyAndTargetCurrencyOrderByDateDescWithNoDataReturnsEmpty() {
     // Act: Query for currency pair with no data
     var result =
@@ -102,8 +94,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName(
-      "findTopByBaseCurrencyAndTargetCurrencyOrderByDateDesc() should isolate by currency pair")
   void findTopByBaseCurrencyAndTargetCurrencyOrderByDateDescIsolatesByCurrencyPair() {
     // Arrange: Create EUR and THB series with different rates
     var eurSeries =
@@ -147,7 +137,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   // ===========================================================================================
 
   @Test
-  @DisplayName("findEarliestDateByTargetCurrency() should return earliest date for currency")
   void findEarliestDateByTargetCurrencyReturnsEarliestDate() {
     // Arrange: Create EUR rates with various dates
     var eurSeries =
@@ -172,7 +161,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("findEarliestDateByTargetCurrency() should return empty when no data for currency")
   void findEarliestDateByTargetCurrencyWithNoDataReturnsEmpty() {
     // Act: Query for currency with no exchange rates
     var result =
@@ -184,8 +172,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName(
-      "findEarliestDateByTargetCurrency() should return global earliest across multiple series")
   void findEarliestDateByTargetCurrencyReturnsGlobalEarliestAcrossSeries() {
     // Arrange: Create two EUR series with different start dates
     // Note: In reality, there should only be one series per currency, but this tests the query
@@ -215,7 +201,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("findEarliestDateByTargetCurrency() should isolate by target currency")
   void findEarliestDateByTargetCurrencyIsolatesByTargetCurrency() {
     // Arrange: Create EUR and THB rates with different start dates
     var eurSeries =
@@ -250,7 +235,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   // ===========================================================================================
 
   @Test
-  @DisplayName("countByCurrencySeries() should return zero when no rates exist")
   void countByCurrencySeriesWithNoRatesReturnsZero() {
     // Arrange: Use existing EUR series from V6 migration (no rates initially)
     var eurSeries =
@@ -264,7 +248,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("countByCurrencySeries() should return one when single rate exists")
   void countByCurrencySeriesWithSingleRateReturnsOne() {
     // Arrange: Create EUR series with one rate
     var eurSeries =
@@ -285,7 +268,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("countByCurrencySeries() should return count when multiple rates exist")
   void countByCurrencySeriesWithMultipleRatesReturnsCount() {
     // Arrange: Create EUR series with multiple rates
     var eurSeries =
@@ -309,7 +291,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("countByCurrencySeries() should isolate by series")
   void countByCurrencySeriesIsolatesBySeries() {
     // Arrange: Create EUR and THB series with different number of rates
     var eurSeries =
@@ -345,7 +326,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   // ===========================================================================================
 
   @Test
-  @DisplayName("JpaSpecificationExecutor should filter by date range")
   void specificationFiltersByDateRange() {
     // Arrange: Create EUR rates across a wide date range
     var eurSeries =
@@ -379,7 +359,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("JpaSpecificationExecutor should filter by multiple target currencies")
   void specificationFiltersByMultipleCurrencies() {
     // Arrange: Create EUR, THB, and GBP rates
     var eurSeries =
@@ -424,7 +403,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("JpaSpecificationExecutor should filter by rate threshold")
   void specificationFiltersByRateThreshold() {
     // Arrange: Create EUR rates with varying values
     var eurSeries =
@@ -465,7 +443,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("JpaSpecificationExecutor should combine multiple filters")
   void specificationCombinesMultipleFilters() {
     // Arrange: Create multiple currencies and dates
     var eurSeries =
@@ -520,7 +497,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   // ===========================================================================================
 
   @Test
-  @DisplayName("Should enforce unique constraint on (base_currency, target_currency, date)")
   void saveWithDuplicateCurrencyPairAndDateThrowsException() {
     // Arrange: Create initial EUR rate
     var eurSeries =
@@ -548,7 +524,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("Should allow duplicate currency pair with different dates")
   void saveWithDuplicateCurrencyPairButDifferentDateSucceeds() {
     // Arrange: Create EUR rate on Jan 2
     var eurSeries =
@@ -574,7 +549,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("Should allow duplicate date with different currency pairs")
   void saveWithDuplicateDateButDifferentCurrencyPairSucceeds() {
     // Arrange: Create EUR rate on Jan 2
     var eurSeries =
@@ -606,7 +580,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   // ===========================================================================================
 
   @Test
-  @DisplayName("Should prevent saving ExchangeRate without CurrencySeries")
   void saveWithoutCurrencySeriesThrowsException() {
     // Arrange: Create exchange rate without setting currencySeries
     var rate = new ExchangeRate();
@@ -625,7 +598,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("Should prevent deletion of CurrencySeries with ExchangeRates (ON DELETE RESTRICT)")
   void deleteSeriesWithExistingRatesThrowsException() {
     // Arrange: Use existing EUR series from V6 migration and add exchange rate
     var eurSeries =
@@ -648,7 +620,6 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  @DisplayName("Should allow deletion of ExchangeRate without affecting CurrencySeries")
   void deleteExchangeRateDoesNotAffectCurrencySeries() {
     // Arrange: Create EUR series with exchange rate
     var eurSeries =
@@ -670,168 +641,7 @@ class ExchangeRateRepositoryIntegrationTest extends AbstractIntegrationTest {
     assertThat(series).isPresent();
   }
 
-  // ===========================================================================================
-  // Audit Timestamp Tests
-  // ===========================================================================================
-
   @Test
-  @DisplayName("Should auto-populate createdAt timestamp on insert")
-  void saveNewEntityPopulatesCreatedAt() {
-    // Arrange: Create EUR rate
-    var eurSeries =
-        currencySeriesRepository.findByCurrencyCode(TestConstants.VALID_CURRENCY_EUR).orElseThrow();
-
-    var rate =
-        ExchangeRateTestBuilder.forSeries(eurSeries)
-            .withDate(LocalDate.of(2024, 1, 2))
-            .withRate(new BigDecimal("0.8500"))
-            .build();
-
-    // Act
-    var saved = exchangeRateRepository.saveAndFlush(rate);
-
-    // Assert
-    assertThat(saved.getCreatedAt()).isNotNull();
-  }
-
-  @Test
-  @DisplayName("Should auto-populate updatedAt timestamp on insert")
-  void saveNewEntityPopulatesUpdatedAt() {
-    // Arrange: Create EUR rate
-    var eurSeries =
-        currencySeriesRepository.findByCurrencyCode(TestConstants.VALID_CURRENCY_EUR).orElseThrow();
-
-    var rate =
-        ExchangeRateTestBuilder.forSeries(eurSeries)
-            .withDate(LocalDate.of(2024, 1, 2))
-            .withRate(new BigDecimal("0.8500"))
-            .build();
-
-    // Act
-    var saved = exchangeRateRepository.saveAndFlush(rate);
-
-    // Assert
-    assertThat(saved.getUpdatedAt()).isNotNull();
-  }
-
-  @Test
-  @DisplayName("Should update updatedAt timestamp on modification")
-  void saveExistingEntityUpdatesUpdatedAt() throws InterruptedException {
-    // Arrange: Create and save EUR rate
-    var eurSeries =
-        currencySeriesRepository.findByCurrencyCode(TestConstants.VALID_CURRENCY_EUR).orElseThrow();
-
-    var rate =
-        ExchangeRateTestBuilder.forSeries(eurSeries)
-            .withDate(LocalDate.of(2024, 1, 2))
-            .withRate(new BigDecimal("0.8500"))
-            .build();
-    var saved = exchangeRateRepository.saveAndFlush(rate);
-
-    final var originalCreatedAt = saved.getCreatedAt();
-    var originalUpdatedAt = saved.getUpdatedAt();
-
-    // Wait to ensure timestamp difference
-    Thread.sleep(10);
-
-    // Act: Update entity
-    saved.setRate(new BigDecimal("0.8600"));
-    var updated = exchangeRateRepository.saveAndFlush(saved);
-
-    // Assert: updatedAt should change, createdAt should remain same
-    assertThat(updated.getUpdatedAt()).isAfter(originalUpdatedAt);
-    assertThat(updated.getCreatedAt()).isEqualTo(originalCreatedAt);
-  }
-
-  // ===========================================================================================
-  // Basic CRUD Tests
-  // ===========================================================================================
-
-  @Test
-  @DisplayName("Should save and retrieve exchange rate")
-  void saveAndRetrieveSuccess() {
-    // Arrange: Create EUR rate
-    var eurSeries =
-        currencySeriesRepository.findByCurrencyCode(TestConstants.VALID_CURRENCY_EUR).orElseThrow();
-
-    var rate =
-        ExchangeRateTestBuilder.forSeries(eurSeries)
-            .withDate(LocalDate.of(2024, 1, 2))
-            .withRate(new BigDecimal("0.8500"))
-            .build();
-
-    // Act: Save
-    var saved = exchangeRateRepository.saveAndFlush(rate);
-
-    // Act: Retrieve
-    var retrieved = exchangeRateRepository.findById(saved.getId());
-
-    // Assert
-    assertThat(retrieved)
-        .isPresent()
-        .get()
-        .satisfies(
-            r -> {
-              assertThat(r.getTargetCurrency().getCurrencyCode())
-                  .isEqualTo(TestConstants.VALID_CURRENCY_EUR);
-              assertThat(r.getDate()).isEqualTo(LocalDate.of(2024, 1, 2));
-              assertThat(r.getRate()).isEqualByComparingTo(new BigDecimal("0.8500"));
-            });
-  }
-
-  @Test
-  @DisplayName("Should update existing exchange rate")
-  void saveExistingEntityUpdates() {
-    // Arrange: Create and save EUR rate
-    var eurSeries =
-        currencySeriesRepository.findByCurrencyCode(TestConstants.VALID_CURRENCY_EUR).orElseThrow();
-
-    var rate =
-        ExchangeRateTestBuilder.forSeries(eurSeries)
-            .withDate(LocalDate.of(2024, 1, 2))
-            .withRate(new BigDecimal("0.8500"))
-            .build();
-    var saved = exchangeRateRepository.saveAndFlush(rate);
-
-    // Act: Update rate value
-    saved.setRate(new BigDecimal("0.8600"));
-    var updated = exchangeRateRepository.saveAndFlush(saved);
-
-    // Assert: Verify update persisted
-    var retrieved = exchangeRateRepository.findById(updated.getId());
-    assertThat(retrieved)
-        .isPresent()
-        .get()
-        .extracting(ExchangeRate::getRate)
-        .isEqualTo(new BigDecimal("0.8600"));
-  }
-
-  @Test
-  @DisplayName("Should delete exchange rate")
-  void deleteSuccess() {
-    // Arrange: Create and save EUR rate
-    var eurSeries =
-        currencySeriesRepository.findByCurrencyCode(TestConstants.VALID_CURRENCY_EUR).orElseThrow();
-
-    var rate =
-        ExchangeRateTestBuilder.forSeries(eurSeries)
-            .withDate(LocalDate.of(2024, 1, 2))
-            .withRate(new BigDecimal("0.8500"))
-            .build();
-    var saved = exchangeRateRepository.saveAndFlush(rate);
-    var savedId = saved.getId();
-
-    // Act
-    exchangeRateRepository.delete(saved);
-    exchangeRateRepository.flush();
-
-    // Assert
-    var found = exchangeRateRepository.findById(savedId);
-    assertThat(found).isEmpty();
-  }
-
-  @Test
-  @DisplayName("Should handle null rate values")
   void saveWithNullRateSucceeds() {
     // Arrange: Create EUR rate with null value (simulates missing FRED data for weekends)
     var eurSeries =

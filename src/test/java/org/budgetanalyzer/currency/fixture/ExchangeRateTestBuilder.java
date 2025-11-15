@@ -199,28 +199,6 @@ public class ExchangeRateTestBuilder {
     return exchangeRate;
   }
 
-  /**
-   * Builds a persisted exchange rate entity with ID.
-   *
-   * <p>Use this to simulate entities that already exist in the database. The entity will have:
-   *
-   * <ul>
-   *   <li>ID: auto-incremented starting from 1000
-   * </ul>
-   *
-   * <p>Note: Audit timestamps (createdAt, updatedAt) are managed by JPA and will be set when the
-   * entity is actually persisted to the database.
-   *
-   * @return an ExchangeRate instance with ID
-   */
-  public ExchangeRate buildPersisted() {
-    // Use a high starting ID to avoid conflicts with test data
-    if (id == null) {
-      id = System.nanoTime() % 1_000_000 + 1000L;
-    }
-    return build();
-  }
-
   // ===========================================================================================
   // Convenience Factory Methods
   // ===========================================================================================

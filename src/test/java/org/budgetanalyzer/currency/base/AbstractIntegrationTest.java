@@ -90,6 +90,7 @@ public abstract class AbstractIntegrationTest {
     jdbcTemplate.execute("DELETE FROM exchange_rate");
     jdbcTemplate.execute("DELETE FROM currency_series");
     jdbcTemplate.execute("DELETE FROM event_publication");
+    jdbcTemplate.execute("DELETE FROM shedlock");
 
     // Restore seed data from V6 migration
     restoreSeedData();

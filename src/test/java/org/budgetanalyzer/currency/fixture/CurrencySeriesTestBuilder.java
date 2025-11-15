@@ -30,10 +30,6 @@ import org.budgetanalyzer.currency.domain.CurrencySeries;
  *     .withProviderSeriesId("DEXTHUS")
  *     .enabled(false)
  *     .build();
- *
- * // Persisted entity with ID and timestamps
- * CurrencySeries persisted = CurrencySeriesTestBuilder.defaultGbp()
- *     .buildPersisted();
  * }</pre>
  */
 public class CurrencySeriesTestBuilder {
@@ -114,28 +110,6 @@ public class CurrencySeriesTestBuilder {
     series.setProviderSeriesId(providerSeriesId);
     series.setEnabled(enabled);
     return series;
-  }
-
-  /**
-   * Builds a persisted currency series entity with ID.
-   *
-   * <p>Use this to simulate entities that already exist in the database. The entity will have:
-   *
-   * <ul>
-   *   <li>ID: auto-incremented starting from 1000
-   * </ul>
-   *
-   * <p>Note: Audit timestamps (createdAt, updatedAt) are managed by JPA and will be set when the
-   * entity is actually persisted to the database.
-   *
-   * @return a CurrencySeries instance with ID
-   */
-  public CurrencySeries buildPersisted() {
-    // Use a high starting ID to avoid conflicts with test data
-    if (id == null) {
-      id = System.nanoTime() % 1_000_000 + 1000L;
-    }
-    return build();
   }
 
   // ===========================================================================================

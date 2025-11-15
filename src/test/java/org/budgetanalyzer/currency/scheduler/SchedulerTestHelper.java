@@ -22,6 +22,24 @@ import org.springframework.jdbc.core.JdbcTemplate;
  *   <li>Async waiting for lock state changes
  * </ul>
  *
+ * <p><b>ShedLock Database Schema:</b>
+ *
+ * <p>This helper class interacts with the standard ShedLock table. The official PostgreSQL schema
+ * is:
+ *
+ * <pre>{@code
+ * CREATE TABLE shedlock(
+ *     name VARCHAR(64) NOT NULL,       -- Lock name (scheduled task identifier), PRIMARY KEY
+ *     lock_until TIMESTAMP NOT NULL,   -- When the lock expires (future = active, past = released)
+ *     locked_at TIMESTAMP NOT NULL,    -- When the lock was acquired
+ *     locked_by VARCHAR(255) NOT NULL, -- Lock holder identifier (hostname + thread)
+ *     PRIMARY KEY (name)
+ * );
+ * }</pre>
+ *
+ * <p>Schema source: <a
+ * href="https://github.com/lukas-krecan/ShedLock">https://github.com/lukas-krecan/ShedLock</a>
+ *
  * <p><b>Usage:</b>
  *
  * <pre>{@code

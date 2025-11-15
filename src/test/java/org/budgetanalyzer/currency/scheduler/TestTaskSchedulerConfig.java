@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.Trigger;
-import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
+import org.springframework.scheduling.concurrent.SimpleAsyncTaskScheduler;
 
 /**
  * Test configuration that replaces TaskScheduler with a version that executes scheduled tasks
@@ -23,8 +23,8 @@ import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
  * tasks immediately instead of waiting for the scheduled time. This allows tests to verify retry
  * logic without real time delays.
  *
- * <p><b>Implementation:</b> Wraps {@link ConcurrentTaskScheduler} and overrides {@code
- * schedule(Runnable, Instant)} to execute tasks immediately using {@code execute()} instead of
+ * <p><b>Implementation:</b> Wraps {@link SimpleAsyncTaskScheduler} and overrides {@code
+ * schedule(Runnable, Instant)} to execute tasks immediately using {@code run()} instead of
  * scheduling for future execution.
  *
  * <p><b>Usage:</b> Import this configuration in integration tests that test retry logic:
@@ -70,11 +70,11 @@ public class TestTaskSchedulerConfig {
    * TaskScheduler implementation that executes scheduled tasks immediately instead of waiting for
    * the scheduled time.
    *
-   * <p>Delegates all other methods to {@link ConcurrentTaskScheduler}.
+   * <p>Delegates all other methods to {@link SimpleAsyncTaskScheduler}.
    */
   private static class ImmediateTaskScheduler implements TaskScheduler {
 
-    private final ConcurrentTaskScheduler delegate = new ConcurrentTaskScheduler();
+    private final SimpleAsyncTaskScheduler delegate = new SimpleAsyncTaskScheduler();
 
     @Override
     public java.util.concurrent.ScheduledFuture<?> schedule(Runnable task, Trigger trigger) {

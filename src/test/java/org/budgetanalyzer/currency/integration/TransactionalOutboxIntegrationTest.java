@@ -56,7 +56,10 @@ import org.budgetanalyzer.service.exception.BusinessException;
 @EnableScenarios
 @TestPropertySource(
     properties = {
-      "spring.cloud.function.definition=", // Empty string = disable all consumers
+      // Disable async consumers to prevent race conditions in tests. Without this, async consumers
+      // may attempt to read from tables table after test cleanup has deleted it,
+      // causing test failures due to missing table errors.
+      "spring.cloud.function.definition="
     })
 public class TransactionalOutboxIntegrationTest extends AbstractWireMockTest {
 

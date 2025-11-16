@@ -30,11 +30,15 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation(libs.spring.boot.starter.actuator)
-    implementation(libs.spring.boot.starter.web)
-    implementation(libs.springdoc.openapi)
-    implementation(libs.spring.boot.starter.data.jpa)
+    // Service-web provides: web, data-jpa, springdoc, jackson, slf4j, opencsv, actuator
+    implementation(libs.service.web)
+
+    // Service-specific base
     implementation(libs.spring.boot.starter.validation)
+    implementation(libs.flyway.core)
+    implementation(libs.flyway.database.postgresql)
+
+    // Add-ons: WebClient, Redis, Messaging, Modulith, ShedLock
     implementation(libs.spring.boot.starter.webflux)
     implementation(libs.spring.boot.starter.data.redis)
     implementation(libs.spring.boot.starter.cache)
@@ -44,11 +48,6 @@ dependencies {
     implementation(libs.spring.modulith.starter.jpa)
     implementation(libs.shedlock.spring)
     implementation(libs.shedlock.provider.jdbc)
-    implementation(libs.flyway.core)
-    implementation(libs.flyway.database.postgresql)
-
-    implementation(libs.opencsv)
-    implementation(libs.service.common)
 
     runtimeOnly(libs.postgresql)
 

@@ -7,6 +7,10 @@
 
   "initializeCommand": "bash ${localWorkspaceFolder}/../orchestration/claude-code-sandbox/setup-env.sh",
 
+  "remoteEnv": {
+    "SSH_AUTH_SOCK": ""
+  },
+
   "customizations": {
     "vscode": {
       "extensions": [

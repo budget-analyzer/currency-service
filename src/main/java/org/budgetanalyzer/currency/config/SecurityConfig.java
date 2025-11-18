@@ -3,11 +3,14 @@ package org.budgetanalyzer.currency.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -39,7 +42,7 @@ public class SecurityConfig {
 
   private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
-  @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+  @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}")
   private String issuerUri;
 
   @Value("${AUTH0_AUDIENCE:https://api.budgetanalyzer.org}")
@@ -75,22 +78,27 @@ public class SecurityConfig {
                           logger.error(
                               "Authorization header present: {}",
                               request.getHeader("Authorization") != null);
+
                           if (request.getHeader("Authorization") != null) {
-                            String authHeader = request.getHeader("Authorization");
+                            var authHeader = request.getHeader("Authorization");
                             logger.error(
                                 "Authorization header starts with Bearer: {}",
                                 authHeader.startsWith("Bearer "));
+
                             if (authHeader.startsWith("Bearer ")) {
-                              String token = authHeader.substring(7);
+                              var token = authHeader.substring(7);
                               logger.error("Token length: {}", token.length());
+
                               // Log first 50 chars of token for debugging
                               logger.error(
                                   "Token preview: {}...",
                                   token.length() > 50 ? token.substring(0, 50) : token);
                             }
                           }
+
                           logger.error("Authentication exception: {}", authException.getMessage());
                           logger.error("Exception type: {}", authException.getClass().getName());
+
                           if (authException.getCause() != null) {
                             logger.error("Caused by: {}", authException.getCause().getMessage());
                             logger.error(
@@ -129,9 +137,14 @@ public class SecurityConfig {
    *   <li>Supports PS256, RS256, and ES256 algorithms
    * </ul>
    *
+   * <p>This bean is only created if no other {@code JwtDecoder} bean exists. In tests, the mock
+   * {@code JwtDecoder} from {@code AbstractIntegrationTest} is registered first (with
+   * {@code @Primary}), preventing this production decoder from being created.
+   *
    * @return configured JwtDecoder
    */
   @Bean
+  @ConditionalOnMissingBean(JwtDecoder.class)
   public JwtDecoder jwtDecoder() {
     logger.info("=== JWT Decoder Configuration ===");
     logger.info("Issuer URI: {}", issuerUri);
@@ -144,7 +157,7 @@ public class SecurityConfig {
 
       // Create decoder using issuer URI (fetches JWKS from .well-known/openid-configuration)
       // Configure to accept both "JWT" and "at+jwt" token types (OAuth 2.0 RFC 9068)
-      NimbusJwtDecoder decoder =
+      var decoder =
           NimbusJwtDecoder.withIssuerLocation(issuerUri)
               .jwtProcessorCustomizer(
                   jwtProcessor ->
@@ -173,29 +186,26 @@ public class SecurityConfig {
             // Validate audience
             if (token.getAudience() == null || token.getAudience().isEmpty()) {
               logger.error("JWT validation failed: Token has no audience claim");
-              org.springframework.security.oauth2.core.OAuth2Error error =
-                  new org.springframework.security.oauth2.core.OAuth2Error(
-                      "invalid_token", "Token must have an audience", null);
-              return org.springframework.security.oauth2.core.OAuth2TokenValidatorResult.failure(
-                  error);
+
+              var error = new OAuth2Error("invalid_token", "Token must have an audience", null);
+
+              return OAuth2TokenValidatorResult.failure(error);
             }
 
-            boolean audienceMatches = token.getAudience().contains(audience);
-
+            var audienceMatches = token.getAudience().contains(audience);
             if (!audienceMatches) {
               logger.error(
                   "JWT validation failed: Token audience {} does not match expected audience {}",
                   token.getAudience(),
                   audience);
-              org.springframework.security.oauth2.core.OAuth2Error error =
-                  new org.springframework.security.oauth2.core.OAuth2Error(
-                      "invalid_token", "Token audience does not match", null);
-              return org.springframework.security.oauth2.core.OAuth2TokenValidatorResult.failure(
-                  error);
+
+              var error = new OAuth2Error("invalid_token", "Token audience does not match", null);
+
+              return OAuth2TokenValidatorResult.failure(error);
             }
 
             logger.debug("JWT validation successful");
-            return org.springframework.security.oauth2.core.OAuth2TokenValidatorResult.success();
+            return OAuth2TokenValidatorResult.success();
           });
 
       logger.info("JWT decoder configured successfully");
@@ -210,10 +220,12 @@ public class SecurityConfig {
       logger.error("Failed to configure JWT decoder", e);
       logger.error("Issuer URI was: {}", issuerUri);
       logger.error("Exception type: {}", e.getClass().getName());
+
       if (e.getCause() != null) {
         logger.error("Caused by: {}", e.getCause().getMessage());
         logger.error("Root cause type: {}", e.getCause().getClass().getName());
       }
+
       throw new IllegalStateException("JWT decoder configuration failed", e);
     }
   }
@@ -232,8 +244,7 @@ public class SecurityConfig {
    */
   @Bean
   public JwtAuthenticationConverter jwtAuthenticationConverter() {
-    JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter =
-        new JwtGrantedAuthoritiesConverter();
+    var grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
 
     // Extract authorities from 'scope' claim (default: space-delimited string)
     grantedAuthoritiesConverter.setAuthoritiesClaimName("scope");

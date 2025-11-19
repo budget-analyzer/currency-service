@@ -9,6 +9,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import org.budgetanalyzer.service.security.test.TestSecurityConfig;
+
 /**
  * Centralized TestContainers configuration for all integration tests.
  *

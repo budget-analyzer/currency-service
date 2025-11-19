@@ -91,7 +91,7 @@ The service runs on port 8084 for development/debugging.
 ./gradlew spotlessCheck
 
 # Apply code formatting
-./gradlew spotlessApply
+./gradlew clean spotlessApply
 ```
 
 ### Code Quality

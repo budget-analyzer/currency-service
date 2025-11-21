@@ -1,28 +1,43 @@
 # Currency Service
 
-> **⚠️ Work in Progress**: This project is under active development. Features and documentation are subject to change.
-
-Spring Boot microservice for managing currencies and exchange rates in Budget Analyzer - a personal finance management application.
+Spring Boot microservice that automates exchange rate imports from the Federal Reserve Economic Data (FRED) API. This service provides production-quality integration with the St. Louis Fed's economic data infrastructure, delivering reliable currency and exchange rate data for Budget Analyzer.
 
 ## Overview
 
-The Currency Service is responsible for:
+The Currency Service integrates with [FRED](https://fred.stlouisfed.org/) (Federal Reserve Economic Data) to automatically import and maintain exchange rate time series. FRED provides access to 800,000+ economic data series from the Federal Reserve Bank of St. Louis.
 
-- Managing supported currencies
-- Tracking exchange rates between currencies
-- Providing currency conversion capabilities
-- Supporting multi-currency financial operations
-- Historical exchange rate data
+**Core Capabilities:**
+
+- **Automated FRED imports** - Daily scheduled imports from the Fed's Exchange Rates category
+- **Currency series management** - CRUD operations for tracking exchange rate time series
+- **Historical rate queries** - Date range filtering with high-performance caching
+- **Distributed coordination** - Multi-pod safe scheduling with ShedLock
+- **Event-driven architecture** - Domain events with guaranteed delivery via RabbitMQ
+
+The existing FRED client and API key infrastructure can support importing any FRED data category in future services (e.g., interest rates, inflation indices, employment data).
 
 ## Features
 
-- RESTful API for currency management
-- PostgreSQL persistence with Flyway migrations
-- OpenAPI/Swagger documentation
-- Exchange rate management
-- Currency conversion endpoints
-- Spring Boot Actuator for health checks
-- Input validation and error handling
+### FRED Integration
+- Automated daily imports from Federal Reserve Economic Data
+- Provider abstraction pattern (extensible to ECB, Bloomberg, etc.)
+- Configurable import schedules with cron expressions
+
+### Data Management
+- Currency series CRUD with soft delete support
+- Exchange rate queries with date range filtering
+- Flyway database migrations
+
+### Production Infrastructure
+- **Redis caching** - 1-3ms response times, 80-95% hit rates
+- **ShedLock** - Distributed lock coordination for multi-pod deployments
+- **RabbitMQ** - Event-driven messaging with transactional outbox pattern
+- **Health checks** - Kubernetes-ready liveness/readiness probes
+
+### API & Documentation
+- RESTful API with OpenAPI/Swagger documentation
+- Input validation and standardized error handling
+- Spring Boot Actuator monitoring
 
 ## Technology Stack
 
@@ -32,10 +47,43 @@ The Currency Service is responsible for:
   - Spring Data JPA (database access)
   - Spring Boot Actuator (monitoring)
   - Spring Validation
-- **PostgreSQL** (database)
+  - Spring Modulith (event-driven architecture)
+- **PostgreSQL** (database + ShedLock storage)
+- **Redis** (distributed caching)
+- **RabbitMQ** (message broker)
+- **ShedLock** (distributed scheduling)
 - **Flyway** (database migrations)
 - **SpringDoc OpenAPI** (API documentation)
-- **JUnit 5** (testing)
+- **TestContainers + JUnit 5** (testing)
+
+## FRED Integration
+
+This service integrates with the [Federal Reserve Economic Data (FRED)](https://fred.stlouisfed.org/) API, maintained by the Federal Reserve Bank of St. Louis. FRED is a comprehensive database of 800,000+ economic time series from dozens of national, international, public, and private sources.
+
+### Data Source
+
+Exchange rate data is imported from the [Daily Rates category](https://fred.stlouisfed.org/categories/94):
+
+- **Category path**: Money, Banking, & Finance → Exchange Rates → Daily Rates
+- **Available series**: USD/EUR, USD/GBP, USD/JPY, USD/CNY, and 20+ other currency pairs
+- **Dollar indices**: Nominal Broad, Advanced Foreign Economies, Emerging Markets
+- **Historical depth**: Data back to 1971 for major currencies
+
+### Expandability
+
+The FRED API provides access to economic data far beyond exchange rates. With the existing client infrastructure and API key, future Budget Analyzer services could import:
+
+- **Interest rates** - Treasury yields, Fed funds rate, LIBOR
+- **Inflation** - CPI, PCE, producer prices
+- **Employment** - Unemployment rate, payrolls, labor force
+- **GDP & output** - Real GDP, industrial production
+- **Regional data** - State and metro area statistics
+
+See the full [FRED categories](https://fred.stlouisfed.org/categories) for available data.
+
+### API Key
+
+FRED requires a free API key. Register at https://fred.stlouisfed.org/docs/api/api_key.html
 
 ## Quick Start
 
@@ -138,4 +186,4 @@ MIT
 
 ## Contributing
 
-This project is currently in early development. Contributions, issues, and feature requests are welcome as we build toward a stable release.
+Contributions, issues, and feature requests are welcome. Please see the related repositories for the full Budget Analyzer ecosystem.

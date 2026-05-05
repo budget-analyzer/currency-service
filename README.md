@@ -66,7 +66,7 @@ currency-service/
 ## Related Repositories
 
 - [Orchestration](https://github.com/budgetanalyzer/orchestration) - Full system setup and infrastructure
-- [Service Common](https://github.com/budgetanalyzer/service-common) - Shared libraries and patterns
+- [Service Common](https://github.com/budgetanalyzer/service-common) - Shared Spring platform and runtime libraries
 - [Session Gateway](https://github.com/budgetanalyzer/session-gateway) - OAuth2 session management
 - [Transaction Service](https://github.com/budgetanalyzer/transaction-service) - Multi-currency transactions
 - [Permission Service](https://github.com/budgetanalyzer/permission-service) - Authorization (roles and permissions)

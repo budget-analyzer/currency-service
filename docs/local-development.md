@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- JDK 24
+- JDK 25
 - Docker and Docker Compose (for infrastructure)
 
 **Ecosystem setup guides:**

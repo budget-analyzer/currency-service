@@ -204,10 +204,10 @@ find src/main/java/org/budgetanalyzer/currency -type d | sort
 ## Running Locally
 
 **Prerequisites:**
-- JDK 24
+- JDK 25
 - PostgreSQL 15+
 - Redis 7+
-- Gradle 8.11+
+- Gradle 9.5.0 wrapper
 - FRED API key (sign up at https://fred.stlouisfed.org/docs/api/api_key.html)
 
 **Start Infrastructure:**

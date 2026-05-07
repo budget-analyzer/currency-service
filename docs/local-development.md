@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- JDK 24
+- JDK 25
 - Docker and Docker Compose (for infrastructure)
 
 **Ecosystem setup guides:**
@@ -77,6 +77,11 @@ The service runs on port **8084** for development/debugging.
 | Health Check | `http://localhost:8084/actuator/health` |
 
 ## Building
+
+Dependency versions for shared Spring libraries are managed by the service-common
+`spring-cloud-platform` artifact. Local builds resolve that platform, `service-web`, and
+`service-core` from `mavenLocal()` first; after changing service-common platform metadata, publish it
+locally before rebuilding this service.
 
 ```bash
 ./gradlew clean build       # Clean and build

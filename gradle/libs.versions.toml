@@ -1,23 +1,14 @@
 [versions]
-java = "24"
+java = "25"
 springBoot = "3.5.7"
-springCloud = "2025.0.0"
-springModulith = "1.4.0"
-dependencyManagement = "1.1.7"
 spotless = "8.0.0"
 checkstyle = "12.0.1"
 googleJavaFormat = "1.32.0"
-springdoc = "2.8.13"
-shedlock = "6.0.2"
-wiremock = "3.10.0"
-awaitility = "4.2.2"
 junitPlatform = "1.12.2"
-serviceCommon = "0.0.12"
-testcontainers = "1.21.4"
+serviceCommon = "0.0.13-SNAPSHOT"
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
-spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "dependencyManagement" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 
 [libraries]
@@ -34,14 +25,14 @@ spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-star
 spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
 spring-security-test = { module = "org.springframework.security:spring-security-test" }
 
-# SpringDoc OpenAPI
-springdoc-openapi = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+# SpringDoc OpenAPI (version managed by service-common platform)
+springdoc-openapi = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui" }
 
 # Spring Cloud (versions managed by Spring Cloud BOM)
 spring-cloud-stream = { module = "org.springframework.cloud:spring-cloud-stream" }
 spring-cloud-stream-binder-rabbit = { module = "org.springframework.cloud:spring-cloud-stream-binder-rabbit" }
 
-# Spring Modulith (versions managed by Spring Modulith BOM)
+# Spring Modulith (versions managed by service-common platform)
 spring-modulith-starter-core = { module = "org.springframework.modulith:spring-modulith-starter-core" }
 spring-modulith-starter-jpa = { module = "org.springframework.modulith:spring-modulith-starter-jpa" }
 spring-modulith-starter-test = { module = "org.springframework.modulith:spring-modulith-starter-test" }
@@ -50,11 +41,12 @@ spring-modulith-starter-test = { module = "org.springframework.modulith:spring-m
 flyway-core = { module = "org.flywaydb:flyway-core" }
 flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
 
-# Third-party libraries with explicit versions
-shedlock-spring = { module = "net.javacrumbs.shedlock:shedlock-spring", version.ref = "shedlock" }
-shedlock-provider-jdbc = { module = "net.javacrumbs.shedlock:shedlock-provider-jdbc-template", version.ref = "shedlock" }
+# Third-party libraries with versions managed by service-common platform
+shedlock-spring = { module = "net.javacrumbs.shedlock:shedlock-spring" }
+shedlock-provider-jdbc = { module = "net.javacrumbs.shedlock:shedlock-provider-jdbc-template" }
 
 # Service dependencies
+budgetanalyzer-spring-cloud-platform = { module = "org.budgetanalyzer:spring-cloud-platform", version.ref = "serviceCommon" }
 service-core = { module = "org.budgetanalyzer:service-core", version.ref = "serviceCommon" }
 service-web = { module = "org.budgetanalyzer:service-web", version.ref = "serviceCommon" }
 
@@ -68,5 +60,5 @@ testcontainers = { module = "org.testcontainers:testcontainers" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql" }
 testcontainers-rabbitmq = { module = "org.testcontainers:rabbitmq" }
-wiremock-standalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
-awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
+wiremock-standalone = { module = "org.wiremock:wiremock-standalone" }
+awaitility = { module = "org.awaitility:awaitility" }

@@ -54,10 +54,12 @@ See [advanced-patterns-usage.md](advanced-patterns-usage.md#shedlock-distributed
 
 ## Event-Driven Messaging
 
-- **Exchange**: `currency.exchange` (topic)
-- **Routing key prefix**: `currency`
+- **Outbound binding**: `exchangeRateImportRequested-out-0`
+- **Inbound binding**: `importExchangeRates-in-0`
+- **Destination**: `exchange-rate.import.requested`
 - **Delivery guarantee**: Transactional outbox via Spring Modulith
-- **Events**: `CurrencySeriesCreated`, `ExchangeRatesImported`, `ImportFailed`
+- **Domain events**: `CurrencyCreatedEvent`, `CurrencyUpdatedEvent`
+- **External message**: `ExchangeRateImportRequestedMessage`
 
 See [advanced-patterns-usage.md](advanced-patterns-usage.md#event-driven-messaging) for the outbox pattern and examples.
 

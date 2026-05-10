@@ -75,7 +75,7 @@ public class TestContainersConfig {
    * RabbitMQ container for event-driven messaging.
    *
    * <p>Used by Spring Modulith transactional outbox pattern for guaranteed message delivery. Events
-   * are published to {@code currency.created} topic.
+   * are published to {@code exchange-rate.import.requested} topic.
    */
   static RabbitMQContainer rabbitMQContainer =
       new RabbitMQContainer(DockerImageName.parse("rabbitmq:3-management-alpine")).withReuse(true);

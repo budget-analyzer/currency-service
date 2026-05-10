@@ -108,7 +108,8 @@ class EndToEndMessagingFlowIntegrationTest extends AbstractWireMockTest {
    *   <li>Exchange rates imported from FRED
    * </ul>
    *
-   * <p>Migrated from: {@code shouldImportExchangeRatesWhenCurrencyCreatedMessageReceived}
+   * <p>Migrated from: {@code
+   * shouldImportExchangeRatesWhenExchangeRateImportRequestedMessageReceived}
    */
   @Test
   void shouldCompleteFullFlowForEnabledCurrency() {
@@ -139,8 +140,7 @@ class EndToEndMessagingFlowIntegrationTest extends AbstractWireMockTest {
    *
    * <ul>
    *   <li>Service creates disabled currency
-   *   <li>Domain event published and persisted
-   *   <li>MessagingEventListener filters out disabled currency
+   *   <li>No import-triggering domain event is published
    *   <li>No message published to RabbitMQ
    *   <li>No exchange rates imported
    * </ul>

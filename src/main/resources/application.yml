@@ -89,12 +89,12 @@ spring:
     stream:
       bindings:
         # Publisher binding
-        currencyCreated-out-0:
-          destination: currency.created
+        exchangeRateImportRequested-out-0:
+          destination: exchange-rate.import.requested
 
         # Consumer binding
         importExchangeRates-in-0:
-          destination: currency.created
+          destination: exchange-rate.import.requested
           group: exchange-rate-import-service
 
       rabbit:

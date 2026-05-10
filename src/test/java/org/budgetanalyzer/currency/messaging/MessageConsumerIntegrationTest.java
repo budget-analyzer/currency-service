@@ -8,11 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.MDC;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.system.OutputCaptureExtension;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import org.budgetanalyzer.currency.base.AbstractWireMockTest;
 import org.budgetanalyzer.currency.fixture.CurrencySeriesTestBuilder;
@@ -32,17 +29,13 @@ import org.budgetanalyzer.currency.service.CurrencyService;
  * <ul>
  *   <li>Exchange rate import triggered by message consumption
  *   <li>Independent handling of multiple currencies
- *   <li>Filtering of disabled currencies (no import)
- *   <li>Structured logging with correlation IDs
- *   <li>Correlation ID propagation to import service layer
+ *   <li>Import requests are only published for enabled currencies
  * </ul>
  *
  * <p><b>Key Improvements Over Original Tests:</b>
  *
  * <ul>
  *   <li>Uses exact assertions ({@code assertEquals(8, count)}) instead of {@code > 0}
- *   <li>Verifies structured logging output with correlation IDs
- *   <li>Tests consumer error handling behavior
  *   <li>Validates correlation ID propagation through entire flow
  * </ul>
  */
@@ -50,12 +43,6 @@ import org.budgetanalyzer.currency.service.CurrencyService;
 class MessageConsumerIntegrationTest extends AbstractWireMockTest {
 
   private static final int WAIT_TIME = 1;
-
-  @Autowired private JdbcTemplate jdbcTemplate;
-
-  @Autowired private RabbitAdmin rabbitAdmin;
-
-  @Autowired private RabbitTemplate rabbitTemplate;
 
   @Autowired private CurrencyService currencyService;
 
@@ -68,13 +55,14 @@ class MessageConsumerIntegrationTest extends AbstractWireMockTest {
   }
 
   /**
-   * Verifies that ExchangeRateImportConsumer successfully imports exchange rates when a currency
-   * created message is received.
+   * Verifies that ExchangeRateImportConsumer successfully imports exchange rates when an exchange
+   * rate import requested message is received.
    *
    * <p>This test validates the core consumer functionality: consuming a message from RabbitMQ and
    * triggering the exchange rate import process.
    *
-   * <p><b>Migrated from:</b> {@code shouldImportExchangeRatesWhenCurrencyCreatedMessageReceived}
+   * <p><b>Migrated from:</b> {@code
+   * shouldImportExchangeRatesWhenExchangeRateImportRequestedMessageReceived}
    */
   @Test
   void shouldImportExchangeRatesWhenMessageReceived() {
@@ -137,17 +125,17 @@ class MessageConsumerIntegrationTest extends AbstractWireMockTest {
   }
 
   /**
-   * Verifies that ExchangeRateImportConsumer only imports exchange rates for enabled currencies.
+   * Verifies that only enabled currencies publish import requests.
    *
-   * <p>When a currency is disabled, the listener should filter it out and NOT publish a message to
-   * RabbitMQ. Therefore, the consumer should never receive a message for disabled currencies, and
-   * no import should occur.
+   * <p>When a currency is disabled, the service should not publish an import-triggering domain
+   * event. Therefore, the consumer never receives a message for disabled currencies in the normal
+   * event flow, and no import occurs.
    *
    * <p><b>Improvement:</b> Uses exact count ({@code assertEquals(0, count)}) instead of weak
    * assertion ({@code isGreaterThan(0)}).
    */
   @Test
-  void shouldOnlyImportForEnabledCurrency() {
+  void shouldOnlyPublishImportRequestForEnabledCurrency() {
     // Arrange - Create enabled currency
     FredApiStubs.stubSeriesExistsSuccess(TestConstants.FRED_SERIES_EUR);
     FredApiStubs.stubSuccessWithSampleData(TestConstants.FRED_SERIES_EUR);

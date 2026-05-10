@@ -8,14 +8,14 @@ import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import org.budgetanalyzer.currency.messaging.message.CurrencyCreatedMessage;
+import org.budgetanalyzer.currency.messaging.message.ExchangeRateImportRequestedMessage;
 import org.budgetanalyzer.currency.service.ExchangeRateImportService;
 import org.budgetanalyzer.service.servlet.http.CorrelationIdFilter;
 
 /**
- * Consumer for currency-related messages.
+ * Consumer for exchange rate import request messages.
  *
- * <p>Processes currency created messages by triggering asynchronous exchange rate imports.
+ * <p>Processes import request messages by triggering asynchronous exchange rate imports.
  */
 @Configuration
 public class ExchangeRateImportConsumer {
@@ -29,7 +29,7 @@ public class ExchangeRateImportConsumer {
   }
 
   /**
-   * Consumer function for currency created messages.
+   * Consumer function for exchange rate import request messages.
    *
    * <p>Bean name "importExchangeRates" creates binding "importExchangeRates-in-0".
    *
@@ -40,17 +40,18 @@ public class ExchangeRateImportConsumer {
    * <p><b>Distributed Tracing:</b> Uses MDC (Mapped Diagnostic Context) - all log statements within
    * this consumer automatically include correlation ID and event type.
    *
-   * @return Consumer function processing CurrencyCreatedMessage
+   * @return Consumer function processing ExchangeRateImportRequestedMessage
    */
   @Bean
-  public Consumer<CurrencyCreatedMessage> importExchangeRates() {
+  public Consumer<ExchangeRateImportRequestedMessage> importExchangeRates() {
     return message -> {
       MDC.put(CorrelationIdFilter.CORRELATION_ID_MDC_KEY, message.correlationId());
-      MDC.put("eventType", "currency_created");
+      MDC.put("eventType", "exchange_rate_import_requested");
 
       try {
         log.info(
-            "Received currency created message: currencySeriesId={}, currencyCode={}",
+            "Consuming exchange rate import requested message: currencySeriesId={}, "
+                + "currencyCode={}",
             message.currencySeriesId(),
             message.currencyCode());
 

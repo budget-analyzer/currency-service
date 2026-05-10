@@ -62,14 +62,14 @@ spring:
     stream:
       bindings:
         # Publisher binding
-        currencyCreated-out-0:
-          destination: currency.created
+        exchangeRateImportRequested-out-0:
+          destination: exchange-rate.import.requested
 
         # Consumer binding
         importExchangeRates-in-0:
-          destination: currency.created
+          destination: exchange-rate.import.requested
           # CRITICAL: Use unique group per test run to ensure fresh queues
-          # This creates a queue like: currency.created.test-abc123-def456
+          # This creates a queue like: exchange-rate.import.requested.test-abc123-def456
           group: test-${random.uuid}
           # Additional isolation settings
           max-attempts: 3

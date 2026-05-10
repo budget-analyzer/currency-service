@@ -3,6 +3,8 @@ package org.budgetanalyzer.currency.service;
 import java.util.Currency;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -33,6 +35,8 @@ import org.budgetanalyzer.service.servlet.http.CorrelationIdFilter;
 @Service
 public class CurrencyService {
 
+  private static final Logger logger = LoggerFactory.getLogger(CurrencyService.class);
+
   private final CurrencySeriesRepository currencySeriesRepository;
   private final ExchangeRateProvider exchangeRateProvider;
   private final ApplicationEventPublisher eventPublisher;
@@ -58,9 +62,9 @@ public class CurrencyService {
    *
    * <p>This method validates the currency code and provider series ID against the external provider
    * (FRED), persists the currency series to the database, and publishes a {@link
-   * CurrencyCreatedEvent} domain event. The event is automatically persisted to the
-   * event_publication table by Spring Modulith within the same database transaction, ensuring
-   * guaranteed delivery via the transactional outbox pattern.
+   * CurrencyCreatedEvent} domain event when the currency is enabled. The event is automatically
+   * persisted to the event_publication table by Spring Modulith within the same database
+   * transaction, ensuring guaranteed delivery via the transactional outbox pattern.
    *
    * <p><b>Typical Use Case:</b> This endpoint is intended for adding new currencies when FRED adds
    * support for additional currency pairs. Most users will not need to use this endpoint, as 23
@@ -71,7 +75,7 @@ public class CurrencyService {
    *
    * <ol>
    *   <li>Currency entity is saved to the database (within transaction)
-   *   <li>Domain event is published via ApplicationEventPublisher (in-memory)
+   *   <li>If enabled, domain event is published via ApplicationEventPublisher (in-memory)
    *   <li>Spring Modulith intercepts the event and persists it to event_publication table (same
    *       transaction)
    *   <li>Transaction commits (currency entity + event both saved atomically)
@@ -114,11 +118,12 @@ public class CurrencyService {
       // Get correlation ID from MDC (set by CorrelationIdFilter for HTTP requests)
       var correlationId = MDC.get(CorrelationIdFilter.CORRELATION_ID_MDC_KEY);
 
-      // Publish domain event - Spring Modulith will persist this to event_publication table
-      // in the SAME transaction, guaranteeing delivery even if application crashes
-      eventPublisher.publishEvent(
-          new CurrencyCreatedEvent(
-              saved.getId(), saved.getCurrencyCode(), saved.isEnabled(), correlationId));
+      // Publish import-triggering domain event only for currencies eligible for import.
+      if (saved.isEnabled()) {
+        eventPublisher.publishEvent(
+            new CurrencyCreatedEvent(
+                saved.getId(), saved.getCurrencyCode(), saved.isEnabled(), correlationId));
+      }
 
       return saved;
     } catch (DataIntegrityViolationException e) {
@@ -162,10 +167,9 @@ public class CurrencyService {
    * <p>Note: Currency code and providerSeriesId are immutable and cannot be changed after creation.
    * Only the enabled status can be updated.
    *
-   * <p>This method publishes a {@link CurrencyUpdatedEvent} domain event which is automatically
-   * persisted to the event_publication table by Spring Modulith within the same database
-   * transaction. The event listener will only trigger exchange rate imports if the currency is
-   * enabled.
+   * <p>This method publishes a {@link CurrencyUpdatedEvent} domain event only when the currency
+   * changes from disabled to enabled. The event is automatically persisted to the event_publication
+   * table by Spring Modulith within the same database transaction.
    *
    * @param id The currency series ID
    * @param enabled The new enabled status
@@ -175,6 +179,7 @@ public class CurrencyService {
   @Transactional
   public CurrencySeries update(Long id, boolean enabled) {
     var currencySeries = getById(id);
+    var wasEnabled = currencySeries.isEnabled();
     currencySeries.setEnabled(enabled);
 
     var saved = currencySeriesRepository.save(currencySeries);
@@ -182,11 +187,17 @@ public class CurrencyService {
     // Get correlation ID from MDC (set by CorrelationIdFilter for HTTP requests)
     var correlationId = MDC.get(CorrelationIdFilter.CORRELATION_ID_MDC_KEY);
 
-    // Publish domain event - Spring Modulith will persist this to event_publication table
-    // in the SAME transaction, guaranteeing delivery even if application crashes
-    eventPublisher.publishEvent(
-        new CurrencyUpdatedEvent(
-            saved.getId(), saved.getCurrencyCode(), saved.isEnabled(), correlationId));
+    if (!wasEnabled && saved.isEnabled()) {
+      logger.info(
+          "Currency was disabled and is now enabled; publishing currency updated event: "
+              + "currencySeriesId={}, currencyCode={}",
+          saved.getId(),
+          saved.getCurrencyCode());
+
+      eventPublisher.publishEvent(
+          new CurrencyUpdatedEvent(
+              saved.getId(), saved.getCurrencyCode(), saved.isEnabled(), correlationId));
+    }
 
     return saved;
   }

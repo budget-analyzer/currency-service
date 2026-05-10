@@ -9,17 +9,14 @@ import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import org.budgetanalyzer.currency.base.AbstractWireMockTest;
 import org.budgetanalyzer.currency.fixture.CurrencySeriesTestBuilder;
 import org.budgetanalyzer.currency.fixture.FredApiStubs;
 import org.budgetanalyzer.currency.fixture.TestConstants;
-import org.budgetanalyzer.currency.messaging.publisher.CurrencyMessagePublisher;
+import org.budgetanalyzer.currency.messaging.publisher.ExchangeRateImportMessagePublisher;
 import org.budgetanalyzer.currency.repository.ExchangeRateRepository;
 import org.budgetanalyzer.currency.service.CurrencyService;
 
@@ -34,35 +31,26 @@ import org.budgetanalyzer.currency.service.CurrencyService;
  * <ul>
  *   <li>Publishing messages for enabled currencies
  *   <li>Filtering disabled currencies (no external message)
- *   <li>Correlation ID propagation to RabbitMQ message headers
  *   <li>Listener filtering logic before publishing
- *   <li>Retry behavior on publisher failure
  * </ul>
  *
  * <p><b>Key Improvements Over Original Tests:</b>
  *
  * <ul>
- *   <li>Verifies actual RabbitMQ message headers using RabbitTemplate
+ *   <li>Verifies the publisher is called only for enabled currencies
  *   <li>Uses exact assertions (not {@code > 0})
  *   <li>Tests listener filtering logic in isolation
- *   <li>Simulates RabbitMQ failures to test retry behavior
  * </ul>
  */
 class EventListenerIntegrationTest extends AbstractWireMockTest {
 
   private static final int WAIT_TIME = 1;
 
-  @Autowired private JdbcTemplate jdbcTemplate;
-
-  @Autowired private RabbitAdmin rabbitAdmin;
-
-  @Autowired private RabbitTemplate rabbitTemplate;
-
   @Autowired private CurrencyService currencyService;
 
   @Autowired private ExchangeRateRepository exchangeRateRepository;
 
-  @MockitoSpyBean private CurrencyMessagePublisher messagePublisher;
+  @MockitoSpyBean private ExchangeRateImportMessagePublisher exchangeRateImportMessagePublisher;
 
   @BeforeEach
   void cleanup() {
@@ -102,7 +90,7 @@ class EventListenerIntegrationTest extends AbstractWireMockTest {
             });
 
     // Verify publisher was called exactly once
-    verify(messagePublisher, times(1)).publishCurrencyCreated(any());
+    verify(exchangeRateImportMessagePublisher, times(1)).publishExchangeRateImportRequested(any());
   }
 
   /**
@@ -140,7 +128,7 @@ class EventListenerIntegrationTest extends AbstractWireMockTest {
             });
 
     // Verify publisher was never called (filtered by listener)
-    verify(messagePublisher, times(0)).publishCurrencyCreated(any());
+    verify(exchangeRateImportMessagePublisher, times(0)).publishExchangeRateImportRequested(any());
   }
 
   /**
@@ -183,7 +171,7 @@ class EventListenerIntegrationTest extends AbstractWireMockTest {
             });
 
     // Verify publisher called exactly once (only for enabled currency)
-    verify(messagePublisher, times(1)).publishCurrencyCreated(any());
+    verify(exchangeRateImportMessagePublisher, times(1)).publishExchangeRateImportRequested(any());
   }
 
   // ===========================================================================================

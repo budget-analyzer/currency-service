@@ -108,7 +108,8 @@ class EndToEndMessagingFlowIntegrationTest extends AbstractWireMockTest {
    *   <li>Exchange rates imported from FRED
    * </ul>
    *
-   * <p>Migrated from: {@code shouldImportExchangeRatesWhenCurrencyCreatedMessageReceived}
+   * <p>Migrated from: {@code
+   * shouldImportExchangeRatesWhenExchangeRateImportRequestedMessageReceived}
    */
   @Test
   void shouldCompleteFullFlowForEnabledCurrency() {

@@ -60,7 +60,7 @@ import org.budgetanalyzer.currency.service.CurrencyService;
  * └─> Spring Modulith polls event_publication
  *     ├─> Finds unpublished events
  *     ├─> Calls @ApplicationModuleListener
- *     │   └─> If enabled: messagePublisher.publishCurrencyCreated()
+ *     │   └─> If enabled: publish exchange rate import request
  *     └─> Marks event as published
  * </pre>
  *

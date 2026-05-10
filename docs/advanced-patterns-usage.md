@@ -448,26 +448,36 @@ public class CurrencyServiceImpl implements CurrencyService {
 @Component
 public class CurrencyEventListener {
 
+    private final StreamBridge streamBridge;
+
     @ApplicationModuleListener
     void on(CurrencyCreatedEvent event) {
-        // Convert domain event to external message
-        var message = new CurrencyMessage(event.getCurrencyCode(), event.getCurrencyName());
+        if (!event.isEnabled()) {
+            return;
+        }
 
-        // Publish to RabbitMQ
-        rabbitTemplate.convertAndSend("currency.exchange", "currency.created", message);
+        // Convert domain event to an import request message
+        var message = new ExchangeRateImportRequestedMessage(
+            event.getCurrencySeriesId(),
+            event.getCurrencyCode(),
+            event.getCorrelationId()
+        );
+
+        // Publish to RabbitMQ through Spring Cloud Stream
+        streamBridge.send("exchangeRateImportRequested-out-0", message);
     }
 }
 ```
 
-**4. Consumer in other service:**
+**4. Consumer:**
 ```java
-@Component
-public class CurrencyEventConsumer {
+@Configuration
+public class ExchangeRateImportConsumer {
 
-    @RabbitListener(queues = "transaction-service.currency-events")
-    public void handleCurrencyCreated(CurrencyMessage message) {
-        // Handle event (e.g., update local cache)
-        transactionService.onCurrencyCreated(message);
+    @Bean
+    public Consumer<ExchangeRateImportRequestedMessage> importExchangeRates() {
+        return message ->
+            exchangeRateImportService.importExchangeRatesForSeries(message.currencySeriesId());
     }
 }
 ```
@@ -488,8 +498,9 @@ Currency enablement and import-trigger messaging emit info-level breadcrumbs acr
 
 1. `CurrencyService` logs when an update changes a currency from disabled to enabled and is about
    to publish the `CurrencyUpdatedEvent`.
-2. `CurrencyMessagePublisher` logs every outbound `currency.created` message with the binding,
-   currency series ID, and currency code.
+2. `ExchangeRateImportMessagePublisher` logs every outbound
+   `exchange-rate.import.requested` message with the binding, currency series ID, and currency
+   code.
 3. `ExchangeRateImportConsumer` logs the matching inbound consumption with the currency series ID
    and currency code before running the import.
 
@@ -529,28 +540,22 @@ Currency enablement and import-trigger messaging emit info-level breadcrumbs acr
 
 ### RabbitMQ Configuration
 
-**Exchange and Routing:**
+**Spring Cloud Stream Bindings:**
 ```yaml
-currency-service:
-  rabbitmq:
-    exchange: currency.exchange
-    routing-key-prefix: currency
+spring:
+  cloud:
+    stream:
+      bindings:
+        exchangeRateImportRequested-out-0:
+          destination: exchange-rate.import.requested
+        importExchangeRates-in-0:
+          destination: exchange-rate.import.requested
+          group: exchange-rate-import-service
 ```
 
-**Queue Binding (in consumer service):**
-```java
-@Bean
-public Queue currencyEventQueue() {
-    return new Queue("transaction-service.currency-events", true);
-}
-
-@Bean
-public Binding currencyEventBinding(Queue queue, TopicExchange exchange) {
-    return BindingBuilder.bind(queue)
-        .to(exchange)
-        .with("currency.*");  // Matches currency.created, currency.updated, etc.
-}
-```
+The external message contract is `ExchangeRateImportRequestedMessage`. Domain events remain
+truthful state changes (`CurrencyCreatedEvent`, `CurrencyUpdatedEvent`), while the listener only
+publishes the external import request for enabled currencies.
 
 ### Adding New Events
 
@@ -582,11 +587,11 @@ public void updateCurrency(String code, String newName) {
 @ApplicationModuleListener
 void on(CurrencyUpdatedEvent event) {
     var message = new CurrencyMessage(event.getCurrencyCode(), event.getNewName());
-    rabbitTemplate.convertAndSend("currency.exchange", "currency.updated", message);
+    streamBridge.send("currencyUpdated-out-0", message);
 }
 ```
 
-4. **Consumers automatically receive** (if bound to `currency.*`)
+4. **Consumers automatically receive** (if bound to the matching destination)
 
 ### Discovery Commands
 
@@ -600,8 +605,8 @@ grep -r "publishEvent" src/main/java/*/service/
 # Find event listeners
 grep -r "@ApplicationModuleListener" src/main/java/*/messaging/
 
-# Find RabbitMQ consumers
-grep -r "@RabbitListener" src/main/java/*/messaging/
+# Find Spring Cloud Stream consumers
+grep -r "Consumer<" src/main/java/*/messaging/
 
 # View RabbitMQ configuration
 cat src/main/resources/application.yml | grep -A 10 "rabbitmq"
@@ -721,7 +726,7 @@ class EventPublishingTest {
     private ApplicationEventPublisher eventPublisher;
 
     @MockBean
-    private RabbitTemplate rabbitTemplate;
+    private StreamBridge streamBridge;
 
     @Test
     void testCurrencyCreatedEventPublished() {
@@ -739,10 +744,9 @@ class EventPublishingTest {
 
         listener.on(event);
 
-        verify(rabbitTemplate).convertAndSend(
-            eq("currency.exchange"),
-            eq("currency.created"),
-            any(CurrencyMessage.class)
+        verify(streamBridge).send(
+            eq("exchangeRateImportRequested-out-0"),
+            any(ExchangeRateImportRequestedMessage.class)
         );
     }
 }

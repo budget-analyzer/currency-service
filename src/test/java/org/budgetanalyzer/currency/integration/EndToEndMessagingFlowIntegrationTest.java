@@ -140,8 +140,7 @@ class EndToEndMessagingFlowIntegrationTest extends AbstractWireMockTest {
    *
    * <ul>
    *   <li>Service creates disabled currency
-   *   <li>Domain event published and persisted
-   *   <li>MessagingEventListener filters out disabled currency
+   *   <li>No import-triggering domain event is published
    *   <li>No message published to RabbitMQ
    *   <li>No exchange rates imported
    * </ul>

@@ -127,9 +127,9 @@ class MessageConsumerIntegrationTest extends AbstractWireMockTest {
   /**
    * Verifies that only enabled currencies publish import requests.
    *
-   * <p>When a currency is disabled, the listener should filter it out and NOT publish a message to
-   * RabbitMQ. Therefore, the consumer never receives a message for disabled currencies in the
-   * normal event flow, and no import occurs.
+   * <p>When a currency is disabled, the service should not publish an import-triggering domain
+   * event. Therefore, the consumer never receives a message for disabled currencies in the normal
+   * event flow, and no import occurs.
    *
    * <p><b>Improvement:</b> Uses exact count ({@code assertEquals(0, count)}) instead of weak
    * assertion ({@code isGreaterThan(0)}).

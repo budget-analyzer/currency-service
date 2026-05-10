@@ -4,7 +4,7 @@ import org.budgetanalyzer.currency.domain.CurrencySeries;
 import org.budgetanalyzer.currency.service.CurrencyService;
 
 /**
- * Domain event published when a new currency series is successfully created.
+ * Domain event published when a new enabled currency series is successfully created.
  *
  * <p>This event is published within the same database transaction as the currency series creation.
  * Spring Modulith automatically stores this event in the event_publication table for guaranteed
@@ -13,12 +13,11 @@ import org.budgetanalyzer.currency.service.CurrencyService;
  * <p><b>Event Flow:</b>
  *
  * <ol>
- *   <li>CurrencyService creates currency entity and publishes this event
+ *   <li>CurrencyService creates enabled currency entity and publishes this event
  *   <li>Spring Modulith persists event to event_publication table (same transaction)
  *   <li>Database transaction commits (currency + event both saved atomically)
  *   <li>Spring Modulith asynchronously processes event via @ApplicationModuleListener
- *   <li>Event listener checks if currency is enabled before publishing external message
- *   <li>If enabled, external message published to RabbitMQ to trigger exchange rate import
+ *   <li>Event listener publishes external message to RabbitMQ to trigger exchange rate import
  *   <li>Event marked as completed in event_publication table
  * </ol>
  *
@@ -36,10 +35,9 @@ import org.budgetanalyzer.currency.service.CurrencyService;
  *
  * <p><b>Messaging Decision Logic:</b>
  *
- * <p>The {@code enabled} field allows the messaging layer to decide whether to publish external
- * messages. This separation keeps the domain layer truthful (always publishes events for actual
- * state changes) while allowing the messaging layer to implement business rules (only notify
- * external systems when currency is enabled).
+ * <p>{@link CurrencyService} publishes this event only for enabled currencies. This avoids
+ * persisting and processing outbox events for disabled currencies that cannot produce import
+ * requests.
  *
  * <p><b>Architecture:</b>
  *
@@ -48,7 +46,7 @@ import org.budgetanalyzer.currency.service.CurrencyService;
  * │
  * ├─> CurrencyService.create()
  * │   ├─> repository.save(currency)           [Transaction starts]
- * │   ├─> eventPublisher.publishEvent(...)
+ * │   ├─> if enabled: eventPublisher.publishEvent(...)
  * │   │   └─> Spring Modulith intercepts
  * │   │       └─> Saves to event_publication  [Same transaction!]
  * │   └─> return                               [Transaction commits]
@@ -60,7 +58,7 @@ import org.budgetanalyzer.currency.service.CurrencyService;
  * └─> Spring Modulith polls event_publication
  *     ├─> Finds unpublished events
  *     ├─> Calls @ApplicationModuleListener
- *     │   └─> If enabled: publish exchange rate import request
+ *     │   └─> Publish exchange rate import request
  *     └─> Marks event as published
  * </pre>
  *

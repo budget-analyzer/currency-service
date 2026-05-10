@@ -452,10 +452,6 @@ public class CurrencyEventListener {
 
     @ApplicationModuleListener
     void on(CurrencyCreatedEvent event) {
-        if (!event.isEnabled()) {
-            return;
-        }
-
         // Convert domain event to an import request message
         var message = new ExchangeRateImportRequestedMessage(
             event.getCurrencySeriesId(),
@@ -553,9 +549,9 @@ spring:
           group: exchange-rate-import-service
 ```
 
-The external message contract is `ExchangeRateImportRequestedMessage`. Domain events remain
-truthful state changes (`CurrencyCreatedEvent`, `CurrencyUpdatedEvent`), while the listener only
-publishes the external import request for enabled currencies.
+The external message contract is `ExchangeRateImportRequestedMessage`. `CurrencyService` only
+publishes import-triggering domain events for enabled creates and disabled-to-enabled updates, so
+the listener translates every received domain event into an external import request.
 
 ### Adding New Events
 

@@ -109,12 +109,11 @@ public class MessagingEventListener {
    * persisted the currency entity has committed. The event itself was stored in the {@code
    * event_publication} table within the same transaction, guaranteeing delivery.
    *
-   * <p><b>Enabled Check:</b>
+   * <p><b>Import Eligibility:</b>
    *
-   * <p>This method only publishes external messages if the currency is enabled. This prevents
-   * triggering exchange rate imports for disabled currencies. The domain event is always published
-   * (truthful state representation), but the messaging layer decides whether to notify external
-   * systems.
+   * <p>{@link org.budgetanalyzer.currency.service.CurrencyService} publishes this event only for
+   * enabled currencies, so this listener can translate every received event into an external import
+   * request.
    *
    * <p><b>Execution Flow:</b>
    *
@@ -164,14 +163,6 @@ public class MessagingEventListener {
           event.currencyCode(),
           event.enabled());
 
-      // Only publish external message if currency is enabled
-      if (!event.enabled()) {
-        log.info(
-            "Skipping external message publication for disabled currency: currencyCode={}",
-            event.currencyCode());
-        return;
-      }
-
       // Publish import request message to RabbitMQ.
       exchangeRateImportMessagePublisher.publishExchangeRateImportRequested(
           new ExchangeRateImportRequestedMessage(
@@ -203,12 +194,11 @@ public class MessagingEventListener {
    * updated the currency entity has committed. The event itself was stored in the {@code
    * event_publication} table within the same transaction, guaranteeing delivery.
    *
-   * <p><b>Enabled Check:</b>
+   * <p><b>Import Eligibility:</b>
    *
-   * <p>This method only publishes external messages if the currency is enabled. When a currency is
-   * toggled from disabled to enabled, this triggers exchange rate imports. When toggled from
-   * enabled to disabled, no external message is published (no need to import rates for disabled
-   * currency).
+   * <p>{@link org.budgetanalyzer.currency.service.CurrencyService} publishes this event only when a
+   * currency changes from disabled to enabled, so this listener can translate every received event
+   * into an external import request.
    *
    * <p><b>Execution Flow:</b>
    *
@@ -245,14 +235,6 @@ public class MessagingEventListener {
           event.currencySeriesId(),
           event.currencyCode(),
           event.enabled());
-
-      // Only publish external message if currency is enabled
-      if (!event.enabled()) {
-        log.info(
-            "Skipping external message publication for disabled currency: currencyCode={}",
-            event.currencyCode());
-        return;
-      }
 
       // Publish import request message to RabbitMQ.
       exchangeRateImportMessagePublisher.publishExchangeRateImportRequested(

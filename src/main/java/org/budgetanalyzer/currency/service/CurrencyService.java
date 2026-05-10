@@ -3,6 +3,8 @@ package org.budgetanalyzer.currency.service;
 import java.util.Currency;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -32,6 +34,8 @@ import org.budgetanalyzer.service.servlet.http.CorrelationIdFilter;
  */
 @Service
 public class CurrencyService {
+
+  private static final Logger logger = LoggerFactory.getLogger(CurrencyService.class);
 
   private final CurrencySeriesRepository currencySeriesRepository;
   private final ExchangeRateProvider exchangeRateProvider;
@@ -175,6 +179,7 @@ public class CurrencyService {
   @Transactional
   public CurrencySeries update(Long id, boolean enabled) {
     var currencySeries = getById(id);
+    var wasEnabled = currencySeries.isEnabled();
     currencySeries.setEnabled(enabled);
 
     var saved = currencySeriesRepository.save(currencySeries);
@@ -184,6 +189,14 @@ public class CurrencyService {
 
     // Publish domain event - Spring Modulith will persist this to event_publication table
     // in the SAME transaction, guaranteeing delivery even if application crashes
+    if (!wasEnabled && saved.isEnabled()) {
+      logger.info(
+          "Currency was disabled and is now enabled; publishing currency updated event: "
+              + "currencySeriesId={}, currencyCode={}",
+          saved.getId(),
+          saved.getCurrencyCode());
+    }
+
     eventPublisher.publishEvent(
         new CurrencyUpdatedEvent(
             saved.getId(), saved.getCurrencyCode(), saved.isEnabled(), correlationId));

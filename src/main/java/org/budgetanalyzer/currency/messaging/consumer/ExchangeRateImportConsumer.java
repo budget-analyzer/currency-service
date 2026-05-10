@@ -50,7 +50,7 @@ public class ExchangeRateImportConsumer {
 
       try {
         log.info(
-            "Received currency created message: currencySeriesId={}, currencyCode={}",
+            "Consuming currency created message: currencySeriesId={}, currencyCode={}",
             message.currencySeriesId(),
             message.currencyCode());
 

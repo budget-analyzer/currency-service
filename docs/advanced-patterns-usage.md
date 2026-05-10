@@ -482,6 +482,17 @@ public class CurrencyEventConsumer {
 6. **RabbitMQ delivers** to subscribed services
 7. **Event marked complete** in `event_publication` table
 
+### Operational Logging
+
+Currency enablement and import-trigger messaging emit info-level breadcrumbs across the flow:
+
+1. `CurrencyService` logs when an update changes a currency from disabled to enabled and is about
+   to publish the `CurrencyUpdatedEvent`.
+2. `CurrencyMessagePublisher` logs every outbound `currency.created` message with the binding,
+   currency series ID, and currency code.
+3. `ExchangeRateImportConsumer` logs the matching inbound consumption with the currency series ID
+   and currency code before running the import.
+
 ### Guaranteed Delivery
 
 **Scenario 1: Normal operation**

@@ -86,9 +86,14 @@ locally before rebuilding this service.
 ```bash
 ./gradlew clean build       # Clean and build
 ./gradlew test              # Run tests
+./gradlew test jacocoTestReport  # Generate JaCoCo coverage reports
 ./gradlew spotlessCheck     # Check code style
 ./gradlew clean spotlessApply  # Apply code formatting
 ```
+
+JaCoCo writes the HTML report to `build/reports/jacoco/test/html/index.html`
+and the XML report to `build/reports/jacoco/test/jacocoTestReport.xml`.
+Coverage thresholds are not enforced during the report-only baseline rollout.
 
 ## Code Quality
 

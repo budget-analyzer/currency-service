@@ -49,10 +49,8 @@ Java 25, Spring Boot 3.x (Web, Data JPA, Modulith, Actuator), PostgreSQL, Redis,
 
 JaCoCo coverage reports are written to
 `build/reports/jacoco/test/html/index.html` and
-`build/reports/jacoco/test/jacocoTestReport.xml`. `check` enforces the Phase 2
-coverage gates: 90% line coverage and 85% branch coverage. The recorded baseline
-is 96.43% line / 88.71% branch; ratchet toward critical utility and provider
-path coverage.
+`build/reports/jacoco/test/jacocoTestReport.xml`. `check` enforces the
+configured coverage gates.
 
 ## Project Structure
 

@@ -40,6 +40,18 @@ export SPRING_DATA_REDIS_PASSWORD=your_redis_password
 
 Java 25, Spring Boot 3.x (Web, Data JPA, Modulith, Actuator), PostgreSQL, Redis, RabbitMQ, ShedLock, Flyway, SpringDoc OpenAPI, TestContainers + JUnit 5
 
+## Build and Test
+
+```bash
+./gradlew clean build
+./gradlew test jacocoTestReport
+```
+
+JaCoCo coverage reports are written to
+`build/reports/jacoco/test/html/index.html` and
+`build/reports/jacoco/test/jacocoTestReport.xml`. `check` enforces the
+configured coverage gates.
+
 ## Project Structure
 
 ```

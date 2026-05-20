@@ -86,9 +86,16 @@ locally before rebuilding this service.
 ```bash
 ./gradlew clean build       # Clean and build
 ./gradlew test              # Run tests
+./gradlew test jacocoTestReport  # Generate JaCoCo coverage reports
 ./gradlew spotlessCheck     # Check code style
 ./gradlew clean spotlessApply  # Apply code formatting
 ```
+
+JaCoCo writes the HTML report to `build/reports/jacoco/test/html/index.html`
+and the XML report to `build/reports/jacoco/test/jacocoTestReport.xml`.
+`check` enforces the Phase 2 coverage gates: 90% line coverage and 85% branch
+coverage. The recorded baseline is 96.43% line / 88.71% branch; ratchet toward
+critical utility and provider path coverage.
 
 ## Code Quality
 

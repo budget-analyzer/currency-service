@@ -93,7 +93,9 @@ locally before rebuilding this service.
 
 JaCoCo writes the HTML report to `build/reports/jacoco/test/html/index.html`
 and the XML report to `build/reports/jacoco/test/jacocoTestReport.xml`.
-Coverage thresholds are not enforced during the report-only baseline rollout.
+`check` enforces the Phase 2 coverage gates: 90% line coverage and 85% branch
+coverage. The recorded baseline is 96.43% line / 88.71% branch; ratchet toward
+critical utility and provider path coverage.
 
 ## Code Quality
 

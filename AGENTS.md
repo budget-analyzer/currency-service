@@ -75,6 +75,17 @@ Manages currencies and exchange rates for the Budget Analyzer application with a
 
 **For comprehensive patterns:** Read [service-common/AGENTS.md](../service-common/AGENTS.md)
 
+### Architectural Simplicity (KISS)
+
+**Primary rule: Keep it simple.** Choose the simplest implementation that correctly handles realistic inputs, states, and failure modes. Simplicity must not come at the expense of security, data integrity, or required behavior.
+
+- Put validation in the layer that owns the rule: request models and controllers validate request shape and syntax; services validate business invariants, ownership, persistence state, and cross-entity rules.
+- Do not duplicate API validation in the service layer when every call reaches the service through the validated API contract. Add service-level validation when another caller can bypass that contract or when the service owns the rule.
+- Do not add a guard, fallback, or custom exception path for a state made impossible by an enforced boundary or invariant.
+- At external or asynchronous boundaries, handle plausible failures explicitly because they are outside the local code's control.
+- Before adding a defensive branch, identify how the state can arise and what the caller or system can usefully do in response. If neither is concrete, omit the branch.
+- Prefer a direct implementation and established project patterns over speculative abstractions or extension points.
+
 ### Authorization
 
 All endpoints are protected by fine-grained claims-header-based permissions. Session Gateway manages browser authentication and Redis-backed sessions. Envoy ext_authz validates those sessions and injects `X-User-Id`, `X-Permissions`, `X-Roles` headers. The permission-service sources user roles and atomic permissions (e.g., `currencies:read`, `currencies:write`). Controllers enforce access via `@PreAuthorize` annotations.

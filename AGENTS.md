@@ -1,390 +1,228 @@
-# Currency Service - Exchange Rate Management
+# Currency Service Agent Instructions
 
 ## Tree Position
 
-**Archetype**: service
-**Scope**: budgetanalyzer ecosystem
-**Role**: Manages currencies and exchange rates with external provider integration
+**Archetype:** service  
+**Scope:** Budget Analyzer ecosystem  
+**Role:** Manages currencies and exchange rates with external provider
+integration.
 
-### Relationships
-- **Consumes**: service-common (patterns)
-- **Coordinated by**: orchestration
-- **Peers with**: Discover via `ls /workspace/*-service`
+### Relationships and Boundaries
 
-### Permissions
-- **Read**: `../service-common/`, `../orchestration/docs/`
-- **Write**: This repository only
+- Consume shared Spring patterns from `../service-common/`.
+- Treat `../orchestration/` as the owner of ecosystem coordination and runtime
+  infrastructure.
+- Discover peer services instead of maintaining a static list:
 
-### Discovery
+  ```bash
+  find .. -mindepth 1 -maxdepth 1 -type d -name '*-service' -print | sort
+  ```
+
+- Read this repository, `../service-common/`, and `../orchestration/docs/` as
+  needed. Read `../ai-session-handler/docs/plan-format.md` only when producing
+  an AI Session Handler plan.
+- Write only within this repository. Do not modify sibling repositories.
+
+## Operating Rules
+
+- Do not use agent or subagent tools for code exploration. Inspect the workspace
+  directly with `rg`, `find`, and file reads.
+- Never run Git write commands, including `commit`, `push`, `checkout`, `reset`,
+  or branch manipulation, unless the user explicitly requests them. The user
+  controls Git operations.
+- Keep implementations simple. Choose the most direct design that handles
+  realistic inputs, states, and failure modes without weakening security, data
+  integrity, or required behavior.
+- Put request shape and syntax validation at the API boundary. Put business
+  invariants, ownership, persistence state, and cross-entity rules in services.
+- Do not duplicate validation across layers unless another caller can bypass the
+  validated boundary or the service owns the rule.
+- Add defensive branches only for states that can plausibly arise and have a
+  useful response. Handle failures at external and asynchronous boundaries
+  explicitly.
+- Never commit credentials or replace missing infrastructure, credentials, or
+  shared artifacts with hard-coded workarounds.
+
+## Discovery
+
+Use discovery commands instead of relying on copied inventories:
+
 ```bash
-# My peers
-ls -d /workspace/*-service
-# My platform
-ls ../service-common/
+# Repository structure and build entry points
+find . -maxdepth 2 -type f -not -path './.git/*' | sort
+./gradlew tasks
+
+# Java packages, controllers, and routes
+find src/main/java/org/budgetanalyzer/currency -type d | sort
+rg -n '@(Request|Get|Post|Put|Patch|Delete)Mapping' src/main/java
+
+# Providers, domain events, and distributed patterns
+find src/main/java -type f -name '*Provider.java' -o -path '*/domain/event/*.java'
+rg -n '@Scheduled|@SchedulerLock|@Cacheable|@CacheEvict|@ApplicationModuleListener' src/main/java
+
+# Runtime configuration and environment variables
+rg -n '^currency-service:|fred:|shedlock|cache|rabbit|redis' src/main/resources/application.yml
+rg -n '\$\{[^}]+}' src/main/resources/application.yml
 ```
 
-## Code Exploration
+## Sources of Truth
 
-NEVER use Agent/subagent tools for code exploration. Use Grep, Glob, and Read directly.
+- Use [README.md](README.md) for the repository purpose, human entry points, and
+  documentation index.
+- Read [docs/local-development.md](docs/local-development.md) before changing
+  prerequisites, bootstrap behavior, local run commands, TLS setup, or developer
+  API access.
+- Use [src/main/resources/application.yml](src/main/resources/application.yml)
+  for active runtime defaults and property names. Read
+  [docs/configuration.md](docs/configuration.md) when changing environment
+  variables, infrastructure integration, caching, schedules, messaging, or
+  security configuration.
+- Read [docs/api/README.md](docs/api/README.md) and inspect the controllers before
+  adding, removing, or reshaping a public endpoint. Treat the runtime OpenAPI
+  document as the generated API contract.
+- Read [docs/domain-model.md](docs/domain-model.md) before changing entities,
+  relationships, domain events, or business rules.
+- Read [docs/fred-integration.md](docs/fred-integration.md) before changing the
+  FRED client, provider behavior, import schedule, or rate-limit handling.
+- Read [docs/advanced-patterns-usage.md](docs/advanced-patterns-usage.md) before
+  changing providers, distributed locks, caching, domain-event delivery, or
+  messaging. Consult
+  [service-common advanced patterns](../service-common/docs/advanced-patterns.md)
+  when changing the underlying cross-service pattern.
+- Use [build.gradle.kts](build.gradle.kts),
+  [gradle/libs.versions.toml](gradle/libs.versions.toml), and the checked-in
+  Gradle wrapper as the authority for plugins, dependencies, toolchains,
+  coverage gates, and build behavior.
+- Read
+  [service-common Spring Boot conventions](../service-common/docs/spring-boot-conventions.md)
+  before changing architecture layers, dependency injection, entities, or HTTP
+  response patterns. Read
+  [service-common error handling](../service-common/docs/error-handling.md) before
+  adding exception flows or changing API error responses.
+- Read
+  [service-common artifact resolution](../orchestration/docs/development/service-common-artifact-resolution.md)
+  when local or CI builds cannot resolve shared artifacts. Do not modify or
+  publish from `../service-common/` from this repository context.
 
-## Documentation Discipline
+## Architecture and Security Rules
 
-Always keep documentation up to date after any configuration or code change.
+- Keep controllers thin and delegate application behavior to services.
+  Controllers must never import repositories.
+- Keep consumers thin and delegate to services. Consumers must never import
+  repositories.
+- Keep transaction boundaries in the service layer and persistence behind
+  repositories.
+- Use Jakarta Persistence APIs only. Never import `org.hibernate.*` or depend on
+  Hibernate-specific behavior.
+- Extend the shared auditable or soft-deletable base entity that matches the
+  domain lifecycle; consult the shared Spring Boot conventions before creating
+  an entity.
+- Access external exchange-rate systems through `ExchangeRateProvider`. The
+  service layer must never reference FRED-specific clients or types.
+- Publish domain events from services. Do not inject message publishers into
+  services; bridge domain events to external messages in listeners.
+- Apply `@SchedulerLock` to scheduled work that must execute once across pods.
+- Cache read paths only where the documented cache strategy calls for it, and
+  evict affected cache entries after imports or mutations.
+- Preserve claims-header-based authorization and enforce endpoint permissions
+  with `@PreAuthorize`. Do not trust client-supplied identity or permission
+  headers outside the platform's validated gateway path.
+- Treat role definitions and atomic permission ownership as permission-service
+  concerns. Do not redefine the ecosystem RBAC model in this repository.
 
-Update the nearest affected documentation in the same work:
-- `AGENTS.md` when instructions, guardrails, or discovery commands change
-- Before updating `AGENTS.md`, read and apply the
-  [AGENTS.md checkstyle](https://github.com/budgetanalyzer/orchestration/blob/main/docs/agents-md-checkstyle.md).
-- `README.md` when setup, usage, or repository purpose changes
-- `docs/` when architecture, configuration, APIs, behaviors, or operating procedures change
+## Java and Test Standards
 
-When creating an implementation or execution plan intended for AI Session
-Handler, follow the [AI Session Handler plan format](../ai-session-handler/docs/plan-format.md),
-use its canonical template, replace every placeholder, and retain the numbered
+Before writing or modifying Java, read and apply
+[code-quality-standards.md](../service-common/docs/code-quality-standards.md).
+Do not skip this step. In particular, use `var` where the standard requires it,
+use descriptive names, avoid wildcard imports, and end the first sentence of
+Javadoc with a period.
+
+Before writing or changing tests, read the relevant section of
+[testing-patterns.md](../service-common/docs/testing-patterns.md):
+
+- Read the unit-testing guidance for isolated service or utility tests.
+- Read the integration and Testcontainers guidance for persistence, messaging,
+  cache, or application-context tests.
+- Test correct behavior and edge cases. Fix defects instead of testing around
+  them.
+- Do not weaken, delete, or disable existing tests to make a change pass.
+- Keep reusable test values in the repository's test fixtures or constants
+  instead of scattering magic values.
+
+## Prerequisites and Development Workflow
+
+Before implementing a plan or feature:
+
+1. Search the relevant owner documentation for explicit prerequisites.
+2. Verify required tools, infrastructure, credentials, and shared artifacts are
+   available.
+3. If a prerequisite is missing, stop and inform the user. Do not invent a
+   workaround or bypass the dependency.
+4. Satisfy the prerequisite in its owning repository or workflow before
+   returning to the original task. Do not write outside this repository without
+   separate authorization.
+
+Use [docs/local-development.md](docs/local-development.md) for the current local
+setup and run flow. Use the checked-in Gradle wrapper for build tasks.
+
+When creating an implementation or execution plan for AI Session Handler, read
+and follow the
+[AI Session Handler plan format](../ai-session-handler/docs/plan-format.md). Use
+its canonical template, replace every placeholder, and retain the numbered
 `## Phase N: Title` headings.
 
-Run a specific plan through the workspace wrapper with:
+Run a specific plan from the repository root with:
 
 ```bash
 ai-session-handler run \
-  --plan /workspace/REPOSITORY/docs/plans/PLAN.md \
+  --plan docs/plans/PLAN.md \
   --max-phases 999 \
   --quiet \
-  --agent-cmd "/workspace/ai-session-handler/.venv/bin/ai-session-handler-codex-high --model MODEL"
+  --agent-cmd "../ai-session-handler/.venv/bin/ai-session-handler-codex-high --model MODEL"
 ```
 
 Omit `--model MODEL` from the quoted agent command to use the wrapper's
 configured or default model.
 
-Do not leave documentation updates as follow-up work.
+## Validation
 
-## Service Purpose
+For Java or build changes, run the repository's required formatting and build
+gates in sequence:
 
-Manages currencies and exchange rates for the Budget Analyzer application with automated import from external data providers.
-
-**Domain**: Currency and exchange rate management
-**Responsibilities**:
-- CRUD operations for currency series
-- Exchange rate queries with date range filtering
-- Automated import from FRED (Federal Reserve Economic Data)
-- Scheduled background imports with distributed coordination
-- High-performance distributed caching
-
-## Coding Standards
-
-**Before writing or modifying any Java code, read [code-quality-standards.md](../service-common/docs/code-quality-standards.md).** Do not skip this step. The most common violations: missing `var`, wildcard imports, abbreviated variable names, Javadoc without trailing periods.
-
-## Spring Boot Patterns
-
-**This service follows standard Budget Analyzer Spring Boot conventions.**
-
-**Pattern**: Clean layered architecture (Controller → Service → Repository) with standardized naming, pure JPA persistence, and base entity classes.
-
-**When to consult documentation**:
-- Setting up architecture layers → Read [service-common/AGENTS.md](../service-common/AGENTS.md) Architecture Layers section
-- Creating entities → Read Base Entity Classes in [service-common/AGENTS.md](../service-common/AGENTS.md) (AuditableEntity, SoftDeletableEntity)
-- Writing controllers → Read HTTP Response Patterns in [service-common/AGENTS.md](../service-common/AGENTS.md) (201 Created with Location header)
-- Dependency injection patterns → Read Dependency Injection section in [service-common/AGENTS.md](../service-common/AGENTS.md)
-
-**Quick reference**:
-- Controllers: `*Controller` + thin HTTP layer only
-- Services: `*Service` interface + `*ServiceImpl` + `@Transactional`
-- Repositories: `*Repository` extends `JpaRepository<Entity, ID>`
-- Pure JPA only: **Forbidden** `org.hibernate.*` → **Use** `jakarta.persistence.*`
-- Base entities: Extend `AuditableEntity` or `SoftDeletableEntity`
-
-**For comprehensive patterns:** Read [service-common/AGENTS.md](../service-common/AGENTS.md)
-
-### Architectural Simplicity (KISS)
-
-**Primary rule: Keep it simple.** Choose the simplest implementation that correctly handles realistic inputs, states, and failure modes. Simplicity must not come at the expense of security, data integrity, or required behavior.
-
-- Put validation in the layer that owns the rule: request models and controllers validate request shape and syntax; services validate business invariants, ownership, persistence state, and cross-entity rules.
-- Do not duplicate API validation in the service layer when every call reaches the service through the validated API contract. Add service-level validation when another caller can bypass that contract or when the service owns the rule.
-- Do not add a guard, fallback, or custom exception path for a state made impossible by an enforced boundary or invariant.
-- At external or asynchronous boundaries, handle plausible failures explicitly because they are outside the local code's control.
-- Before adding a defensive branch, identify how the state can arise and what the caller or system can usefully do in response. If neither is concrete, omit the branch.
-- Prefer a direct implementation and established project patterns over speculative abstractions or extension points.
-
-### Authorization
-
-All endpoints are protected by fine-grained claims-header-based permissions. Session Gateway manages browser authentication and Redis-backed sessions. Envoy ext_authz validates those sessions and injects `X-User-Id`, `X-Permissions`, `X-Roles` headers. The permission-service sources user roles and atomic permissions (e.g., `currencies:read`, `currencies:write`). Controllers enforce access via `@PreAuthorize` annotations.
-
-See [permission-service/AGENTS.md](../permission-service/AGENTS.md) for the RBAC model, role definitions, and permission details. See also the [Permission Service README](../permission-service/README.md) for an overview.
-
-## Advanced Patterns Used
-
-This service implements ALL advanced patterns from service-common for external integrations, messaging, caching, and distributed systems.
-
-**Pattern**: Provider abstraction (external APIs), Transactional Outbox (guaranteed messaging), Redis caching (performance), ShedLock (distributed locking).
-
-**When to consult detailed documentation**:
-- **Adding new providers (ECB, Bloomberg)** → Read [Advanced Patterns Usage Guide](docs/advanced-patterns-usage.md#provider-abstraction-pattern)
-- **Adjusting lock durations or schedules** → Read [ShedLock section](docs/advanced-patterns-usage.md#shedlock-distributed-locking)
-- **Cache tuning or monitoring** → Read [Redis Caching section](docs/advanced-patterns-usage.md#redis-distributed-caching)
-- **Adding domain events** → Read [Event-Driven Messaging](docs/advanced-patterns-usage.md#event-driven-messaging)
-- **Understanding pattern theory** → Read [service-common/docs/advanced-patterns.md](../service-common/docs/advanced-patterns.md)
-
-**Quick reference**:
-- **Provider Pattern**: Service → `ExchangeRateProvider` interface → `FredExchangeRateProvider` → `FredClient`
-- **ShedLock**: `@SchedulerLock` on scheduled tasks, 15m max lock, 1m min lock, PostgreSQL-backed
-- **Redis Cache**: `@Cacheable` on queries (1-3ms), `@CacheEvict` on imports (50-200ms miss), 80-95% hit rate
-- **Messaging**: Domain events → `event_publication` table → `@ApplicationModuleListener` → RabbitMQ
-
-**For implementation examples and testing patterns:** Read [docs/advanced-patterns-usage.md](docs/advanced-patterns-usage.md)
-
-## Service-Specific Patterns
-
-### FRED API Integration
-
-**External provider:** Federal Reserve Economic Data (FRED)
-
-**Discovery:**
-```bash
-# Find FRED client
-cat src/main/java/org/budgetanalyzer/currency/client/fred/FredClient.java
-
-# View provider interface
-cat src/main/java/org/budgetanalyzer/currency/service/provider/ExchangeRateProvider.java
-
-# Check configuration
-cat src/main/resources/application.yml | grep -A 5 "fred"
-```
-
-**Key Configuration:**
-```yaml
-currency-service:
-  fred:
-    base-url: https://api.stlouisfed.org/fred
-    api-key: ${FRED_API_KEY}
-```
-
-### Scheduled Exchange Rate Import
-
-**Schedule:** Daily at 11 PM UTC
-**Coordination:** ShedLock ensures only one pod executes
-
-**Discovery:**
-```bash
-# Find scheduler
-cat src/main/java/org/budgetanalyzer/currency/scheduler/ExchangeRateImportScheduler.java
-
-# Check lock configuration
-cat src/main/resources/application.yml | grep -A 5 "shedlock"
-```
-
-### Domain Model
-
-See [docs/domain-model.md](docs/domain-model.md) for detailed entity relationships and business rules.
-
-**Key Concepts:**
-- **CurrencySeries**: Exchange rate time series from external providers (ISO 4217 codes)
-- **ExchangeRate**: Individual rate observations (date + rate value)
-
-**Discovery:**
-```bash
-# Find all entities
-find src/main/java -type f -path "*/domain/*.java" | grep -v event
-
-# View entity structure
-cat src/main/java/org/budgetanalyzer/currency/domain/CurrencySeries.java
-cat src/main/java/org/budgetanalyzer/currency/domain/ExchangeRate.java
-```
-
-### Package Structure
-
-**Standard Spring Boot layers** - Read [service-common/AGENTS.md](../service-common/AGENTS.md) for architecture layer details
-
-**Service-specific packages:**
-- `client/fred/` - FRED API integration
-- `scheduler/` - Background import jobs
-- `messaging/` - Event-driven messaging (listener, consumer, publisher)
-- `service/provider/` - Provider abstraction interface
-
-**Discovery:**
-```bash
-# View full package structure
-tree src/main/java/org/budgetanalyzer/currency -L 2
-
-# Or without tree command
-find src/main/java/org/budgetanalyzer/currency -type d | sort
-```
-
-**Critical Architecture Rules:**
-- Controllers NEVER import repositories (use services)
-- Consumers NEVER import repositories (delegate to services)
-- Service layer NEVER imports message publishers (publishes domain events instead)
-- Service layer NEVER references FRED directly (uses `ExchangeRateProvider` interface)
-
-## API Documentation
-
-**OpenAPI Specification:** Run service and access Swagger UI:
-```bash
-./gradlew bootRun
-# Visit: http://localhost:8084/swagger-ui.html
-```
-
-**Key Endpoints:**
-- Currency series CRUD: `/v1/currencies/**`
-- Exchange rates: `/v1/exchange-rates/**`
-
-**Gateway Access:**
-- Internal: `http://localhost:8084/v1/currencies`
-- External (via NGINX): `http://localhost:8080/api/v1/currencies`
-
-## Running Locally
-
-**Prerequisites:**
-- JDK 25
-- PostgreSQL 15+
-- Redis 7+
-- Gradle 9.5.0 wrapper
-- FRED API key (sign up at https://fred.stlouisfed.org/docs/api/api_key.html)
-
-**Start Infrastructure:**
-```bash
-cd ../orchestration
-docker compose up
-```
-
-**Set Environment Variable:**
-```bash
-export FRED_API_KEY=your_api_key_here
-```
-
-**Run Service:**
-```bash
-./gradlew bootRun
-```
-
-**Access:**
-- Service: http://localhost:8084
-- Swagger UI: http://localhost:8084/swagger-ui.html
-- Health Check: http://localhost:8084/actuator/health
-
-## Discovery Commands
-
-```bash
-# Find all REST endpoints
-grep -r "@GetMapping\|@PostMapping\|@PutMapping\|@DeleteMapping" src/main/java/*/api/
-
-# Find provider implementations
-find src/main/java -type f -name "*Provider.java"
-
-# Find domain events
-find src/main/java -type f -path "*/domain/event/*.java"
-
-# Check scheduled tasks
-grep -r "@Scheduled" src/main/java/
-
-# View application configuration
-cat src/main/resources/application.yml
-```
-
-## Build and Test
-
-**Format code:**
 ```bash
 ./gradlew clean spotlessApply
-```
-
-**Build and test:**
-```bash
 ./gradlew clean build
 ```
 
-The build includes:
-- Spotless code formatting checks
-- Checkstyle rule enforcement
-- All unit and integration tests
-- JAR file creation
+- Run focused tests while developing, then run the full build before declaring
+  Java work complete.
+- For documentation-only changes, verify every changed relative link resolves
+  and every documented command is syntactically plausible from the repository
+  root.
+- If a required verifier cannot run because a tool, credential, service, or
+  infrastructure dependency is unavailable, report that explicitly. Do not
+  claim full verification.
 
-**Troubleshooting:**
+## Documentation Discipline
 
-If encountering "cannot resolve" errors for service-common classes:
-```bash
-cd ../service-common
-./gradlew clean build publishToMavenLocal
-cd ../currency-service
-./gradlew clean build
-```
+Keep the nearest affected documentation current in the same work:
 
-For CI/release `service-common` artifact resolution, use the single source of
-truth in
-[orchestration/docs/development/service-common-artifact-resolution.md](../orchestration/docs/development/service-common-artifact-resolution.md).
-
-## Testing
-
-**Pattern**: Unit tests (*Test.java), integration tests (*IntegrationTest.java) with TestContainers. Minimum 80% coverage. Always test correct behavior (fix bugs, don't test around them).
-
-**When to consult documentation**:
-- Writing unit tests → Read Unit Testing Patterns section in [testing-patterns.md](../service-common/docs/testing-patterns.md)
-- Setting up integration tests → Read TestContainers setup in [testing-patterns.md](../service-common/docs/testing-patterns.md)
-- Understanding test philosophy → Read Testing Philosophy section in [testing-patterns.md](../service-common/docs/testing-patterns.md)
-
-**Quick reference**:
-- Unit tests: No Spring context, fast, mock dependencies
-- Integration tests: `@SpringBootTest` + TestContainers (PostgreSQL/Redis/RabbitMQ)
-- Minimum coverage: 80% line coverage
-- Use TestConstants for test data (no magic strings/numbers)
-
-**Current state**: Limited coverage, opportunity for improvement (provider abstraction, caching, messaging, scheduling)
-
-**For comprehensive testing patterns:** Read [testing-patterns.md](../service-common/docs/testing-patterns.md)
-
-## Deployment
-
-**Environment variables**: Standard Spring Boot + PostgreSQL + Redis + `FRED_API_KEY` (required)
-
-**Health checks**: `/actuator/health/readiness`, `/actuator/health/liveness`
-
-**Discovery:**
-```bash
-# View all env vars
-cat src/main/resources/application.yml | grep '\${' | sort -u
-```
-
-## NOTES FOR AI AGENTS
-
-**CRITICAL - Prerequisites First**: Before implementing any plan or feature:
-1. Check for prerequisites in documentation (e.g., "Prerequisites: service-common Enhancement")
-2. If prerequisites are NOT satisfied, STOP immediately and inform the user
-3. Do NOT attempt to hack around missing prerequisites - this leads to broken implementations that must be deleted
-4. Complete prerequisites first, then return to the original task
-
-**General guidance**: Read [service-common/AGENTS.md](../service-common/AGENTS.md) for code quality standards and build commands.
-
-**Service-specific reminders**:
-- Service layer uses `ExchangeRateProvider` interface, NEVER references FRED directly
-- Consumers delegate to services, NEVER import repositories
-- Services publish domain events, listeners bridge to external messages
-- Use `@Cacheable` for queries, `@CacheEvict(allEntries=true)` after imports
-- Use `@SchedulerLock` for scheduled tasks (multi-pod coordination)
-
-**NO GIT WRITE OPERATIONS**: Never run git commands (commit, push, checkout, reset, etc.) without explicit user request. The user controls git operations entirely. You may suggest what to commit, but don't do it.
+- Update `AGENTS.md` when agent instructions, guardrails, workflows, or discovery
+  commands change. Before editing it, read and apply the
+  [AGENTS.md checkstyle](../orchestration/docs/agents-md-checkstyle.md).
+- Update `README.md` when repository purpose, setup, usage, or human onboarding
+  changes.
+- Update `docs/` when architecture, configuration, APIs, behavior, operations,
+  or design rationale changes.
+- Keep detailed recurring information in one owner document and link to it
+  instead of copying it into `AGENTS.md`.
+- Do not leave required documentation updates as follow-up work.
 
 ## Honest Discourse
 
-Do not over-validate ideas. The user wants honest pushback, not agreement.
-
-- If something seems wrong, say so directly
-- Distinguish "novel" from "obvious in retrospect"
-- Push back on vague claims — ask for concrete constraints
-- Don't say "great question" or "that's a really interesting point"
-- Skip the preamble and caveats — just answer
-
----
-
-## External Links (GitHub Web Viewing)
-
-*The relative paths in this document are optimized for Claude Code. When viewing on GitHub, use these links to access other repositories:*
-
-- [Service-Common Repository](https://github.com/budgetanalyzer/service-common)
-- [Service-Common AGENTS.md](https://github.com/budgetanalyzer/service-common/blob/main/AGENTS.md)
-- [Advanced Patterns Documentation](https://github.com/budgetanalyzer/service-common/blob/main/docs/advanced-patterns.md)
-- [Testing Patterns Documentation](https://github.com/budgetanalyzer/service-common/blob/main/docs/testing-patterns.md)
-- [Session Gateway Repository](https://github.com/budgetanalyzer/session-gateway)
-- [Session Gateway AGENTS.md](https://github.com/budgetanalyzer/session-gateway/blob/main/AGENTS.md)
-- [Token Validation Service Repository](https://github.com/budgetanalyzer/token-validation-service)
-- [Permission Service Repository](https://github.com/budgetanalyzer/permission-service)
-- [Permission Service AGENTS.md](https://github.com/budgetanalyzer/permission-service/blob/main/AGENTS.md)
+- Say directly when a proposal conflicts with repository constraints or lacks
+  required detail.
+- Distinguish novel findings from conclusions that are obvious in retrospect.
+- Ask for concrete constraints when a claim is too vague to act on safely.
+- Skip praise, canned validation, and unnecessary preambles.

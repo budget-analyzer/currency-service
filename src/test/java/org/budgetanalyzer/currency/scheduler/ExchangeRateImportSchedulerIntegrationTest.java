@@ -31,7 +31,7 @@ import org.budgetanalyzer.currency.repository.ExchangeRateRepository;
 import org.budgetanalyzer.currency.service.ExchangeRateImportService;
 
 /** Integration tests for {@link ExchangeRateImportScheduler}. */
-class ExchangeRateImportSchedulerTest extends AbstractWireMockTest {
+class ExchangeRateImportSchedulerIntegrationTest extends AbstractWireMockTest {
 
   private static final int DEFAULT_MAX_ATTEMPTS = 3;
   private static final long DEFAULT_DELAY_MINUTES = 1;

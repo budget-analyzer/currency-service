@@ -613,140 +613,117 @@ psql -d budget_analyzer -c "SELECT * FROM event_publication ORDER BY publication
 
 ## Testing Advanced Patterns
 
+Follow the
+[canonical service-common testing patterns](https://github.com/budgetanalyzer/service-common/blob/main/docs/testing-patterns.md)
+before adding or changing tests. Keep application-owned providers, services, repositories,
+listeners, consumers, and schedulers real. Use the infrastructure boundary that matches the
+behavior: Testcontainers for PostgreSQL, Redis, and RabbitMQ; WireMock for FRED HTTP responses.
+
 ### Provider Abstraction Testing
 
-**Unit test with mock provider:**
+Run the real provider and FRED client against WireMock. Assert the provider result or mapped error,
+not calls between application beans. The shared `AbstractWireMockTest` also supplies the
+Testcontainers application context.
+
 ```java
-@Test
-void testImportExchangeRates() {
-    // Mock the interface, not FRED
-    ExchangeRateProvider mockProvider = mock(ExchangeRateProvider.class);
-    when(mockProvider.fetchRates("USD")).thenReturn(testRates);
-
-    var service = new CurrencyServiceImpl(mockProvider, repository);
-    service.importExchangeRates("USD");
-
-    verify(repository).saveAll(testRates);
-}
-```
-
-**Integration test with real provider:**
-```java
-@SpringBootTest
-@TestPropertySource(properties = {"spring.profiles.active=test"})
-class FredProviderIntegrationTest {
+class FredExchangeRateProviderIntegrationTest extends AbstractWireMockTest {
 
     @Autowired
-    private ExchangeRateProvider provider;  // Real FRED implementation
+    private ExchangeRateProvider exchangeRateProvider;
 
     @Test
-    void testFetchRatesFromFred() {
-        List<ExchangeRate> rates = provider.fetchRates("USD");
-        assertThat(rates).isNotEmpty();
+    void shouldFetchRatesFromFredResponse() {
+        FredApiStubs.stubSuccessWithSampleData(TestConstants.FRED_SERIES_EUR);
+        var currencySeries = CurrencySeriesTestBuilder.defaultEur().build();
+
+        var rates = exchangeRateProvider.getExchangeRates(currencySeries, null);
+
+        assertThat(rates).hasSize(8);
     }
 }
 ```
+
+See
+[`FredExchangeRateProviderIntegrationTest`](../src/test/java/org/budgetanalyzer/currency/service/provider/FredExchangeRateProviderIntegrationTest.java)
+for success, transformation, missing-data, and provider-error coverage.
 
 ### ShedLock Testing
 
-**Test lock behavior:**
-```java
-@SpringBootTest
-class SchedulerLockTest {
+Do not test ShedLock itself by starting multiple scheduler objects and verifying a service call
+count. Test scheduler-owned import and retry outcomes with the real application service,
+Testcontainers PostgreSQL, controlled WireMock responses, persisted rates, and metrics. When retry
+timing must be deterministic, use a focused recording implementation of Spring's `TaskScheduler`
+that exposes the scheduled task and time; do not replace the application import service.
 
-    @Test
-    void testOnlyOneInstanceExecutes() throws Exception {
-        // Start two scheduler instances
-        var scheduler1 = new ExchangeRateImportScheduler(service);
-        var scheduler2 = new ExchangeRateImportScheduler(service);
-
-        // Trigger both simultaneously
-        CompletableFuture.allOf(
-            CompletableFuture.runAsync(scheduler1::importDailyExchangeRates),
-            CompletableFuture.runAsync(scheduler2::importDailyExchangeRates)
-        ).join();
-
-        // Verify import executed exactly once
-        verify(service, times(1)).importAllCurrencyRates();
-    }
-}
-```
+The full application integration context validates that the JDBC lock provider and Flyway-managed
+`shedlock` table can start together. Multi-pod lock coordination belongs to deployed-system
+verification.
 
 ### Redis Caching Testing
 
-**Test cache hit:**
-```java
-@SpringBootTest
-@AutoConfigureTestDatabase
-class CachingTest {
+Enable the real Redis cache only in cache-specific tests. Drive the mutation through the real API or
+service and assert the affected cache entry or returned data.
 
-    @Autowired
-    private CurrencyService service;
+```java
+@TestPropertySource(properties = "spring.cache.type=redis")
+class ExchangeRateImportCacheTest extends AbstractControllerTest {
 
     @Autowired
     private CacheManager cacheManager;
 
     @Test
-    void testCacheHit() {
-        // First call - cache miss
-        service.getExchangeRates("USD", startDate, endDate);
+    void shouldEvictCacheAfterImport() throws Exception {
+        var cache = cacheManager.getCache(CacheConfig.EXCHANGE_RATES_CACHE);
+        cache.put("EUR:2024-01-01:2024-01-05", "cached data");
+        FredApiStubs.stubSuccessWithObservations(
+            TestConstants.FRED_SERIES_EUR,
+            List.of(new FredApiStubs.Observation("2024-01-01", "0.8500")));
 
-        // Second call - cache hit
-        service.getExchangeRates("USD", startDate, endDate);
+        performPost("/v1/exchange-rates/import", "").andExpect(status().isOk());
 
-        // Verify repository called only once
-        verify(repository, times(1)).findByCurrencySeriesAndDateRange(any(), any(), any());
-    }
-
-    @Test
-    void testCacheEviction() {
-        service.getExchangeRates("USD", startDate, endDate);  // Cached
-
-        service.importExchangeRates("USD");  // Evicts cache
-
-        service.getExchangeRates("USD", startDate, endDate);  // Cache miss again
-
-        verify(repository, times(2)).findByCurrencySeriesAndDateRange(any(), any(), any());
+        assertThat(cache.get("EUR:2024-01-01:2024-01-05")).isNull();
     }
 }
 ```
+
+See
+[`ExchangeRateImportCacheTest`](../src/test/java/org/budgetanalyzer/currency/api/ExchangeRateImportCacheTest.java)
+for the complete persisted setup and authenticated API request.
 
 ### Event-Driven Messaging Testing
 
-**Test event publication:**
+Run the real listener, publisher, RabbitMQ binding, consumer, import service, and repositories.
+Assert completed outbox events and imported database rows instead of publisher invocation counts.
+
 ```java
-@SpringBootTest
-class EventPublishingTest {
+class EventListenerIntegrationTest extends AbstractWireMockTest {
 
     @Autowired
-    private ApplicationEventPublisher eventPublisher;
+    private CurrencyService currencyService;
 
-    @MockBean
-    private StreamBridge streamBridge;
-
-    @Test
-    void testCurrencyCreatedEventPublished() {
-        var currency = currencyService.createCurrency(request);
-
-        // Verify event persisted
-        var events = eventRepository.findIncomplete();
-        assertThat(events).hasSize(1);
-        assertThat(events.get(0).getType()).isEqualTo("CurrencyCreatedEvent");
-    }
+    @Autowired
+    private ExchangeRateRepository exchangeRateRepository;
 
     @Test
-    void testEventBridgeToRabbitMQ() {
-        var event = new CurrencyCreatedEvent("USD", "US Dollar");
+    void shouldOnlyPublishImportEventForEnabledCurrency() {
+        FredApiStubs.stubSeriesExistsSuccess(TestConstants.FRED_SERIES_EUR);
+        FredApiStubs.stubSuccessWithSampleData(TestConstants.FRED_SERIES_EUR);
+        var currencySeries = CurrencySeriesTestBuilder.defaultEur().build();
 
-        listener.on(event);
+        var created = currencyService.create(currencySeries);
 
-        verify(streamBridge).send(
-            eq("exchangeRateImportRequested-out-0"),
-            any(ExchangeRateImportRequestedMessage.class)
-        );
+        await().untilAsserted(() -> {
+            assertThat(testDatabaseHelper.countCompletedEvents()).isOne();
+            assertThat(exchangeRateRepository.countByCurrencySeries(created)).isEqualTo(8);
+        });
     }
 }
 ```
+
+See [`EventListenerIntegrationTest`](../src/test/java/org/budgetanalyzer/currency/messaging/EventListenerIntegrationTest.java)
+for enabled/disabled event filtering and
+[`EndToEndMessagingFlowIntegrationTest`](../src/test/java/org/budgetanalyzer/currency/integration/EndToEndMessagingFlowIntegrationTest.java)
+for broker-driven consumption, concurrency, and imported-rate outcomes.
 
 ## Common Patterns and Best Practices
 

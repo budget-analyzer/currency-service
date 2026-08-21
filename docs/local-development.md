@@ -97,6 +97,27 @@ and the XML report to `build/reports/jacoco/test/jacocoTestReport.xml`.
 coverage. The recorded baseline is 96.43% line / 88.71% branch; ratchet toward
 critical utility and provider path coverage.
 
+## Testing
+
+Before writing or changing tests, consult the
+[canonical service-common testing patterns](https://github.com/budgetanalyzer/service-common/blob/main/docs/testing-patterns.md).
+Keep application-owned Spring beans real. Integration tests use Testcontainers for PostgreSQL,
+Redis, and RabbitMQ, and use WireMock only for the external FRED HTTP boundary.
+
+Docker must be running, but the integration suite does not require shared local infrastructure or a
+real FRED API key. `AbstractIntegrationTest` supplies the containers, and tests that call FRED extend
+`AbstractWireMockTest` and register controlled FRED responses through `FredApiStubs`.
+
+```bash
+# Run one integration suite
+./gradlew test --tests '*EventListenerIntegrationTest'
+
+# Run all messaging integration suites
+./gradlew test --tests '*EventListenerIntegrationTest' \
+  --tests '*MessageConsumerIntegrationTest' \
+  --tests '*EndToEndMessagingFlowIntegrationTest'
+```
+
 ## Code Quality
 
 This project enforces:

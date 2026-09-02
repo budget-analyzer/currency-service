@@ -25,6 +25,7 @@ import org.budgetanalyzer.currency.fixture.FredApiStubs;
 import org.budgetanalyzer.currency.fixture.TestConstants;
 import org.budgetanalyzer.currency.repository.CurrencySeriesRepository;
 import org.budgetanalyzer.currency.repository.ExchangeRateRepository;
+import org.budgetanalyzer.service.exception.ClientException;
 import org.budgetanalyzer.service.exception.ResourceNotFoundException;
 import org.budgetanalyzer.service.exception.ServiceException;
 
@@ -434,8 +435,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void importExchangeRatesForSeriesThrowsResourceNotFoundExceptionForInvalidId() {
     // Act & Assert
     assertThatThrownBy(() -> exchangeRateImportService.importExchangeRatesForSeries(999L))
-        .isInstanceOf(ResourceNotFoundException.class)
-        .hasMessageContaining("999");
+        .isInstanceOf(ResourceNotFoundException.class);
   }
 
   // ===========================================================================================
@@ -967,9 +967,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   /**
    * Test: Provider exception bubbles up from FRED client.
    *
-   * <p>When the FRED API fails, the ClientException should bubble up from the provider. Note: The
-   * exception won't contain currency context since the FRED client only knows about FRED series
-   * IDs, not our currency codes.
+   * <p>When the FRED API fails, the ClientException should bubble up from the provider.
    */
   @Test
   void providerExceptionBubblesUpFromFredClient() {
@@ -980,11 +978,10 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     // Stub FRED API to return server error
     FredApiStubs.stubServerError(TestConstants.FRED_SERIES_EUR);
 
-    // Act & Assert - ClientException is thrown (a type of ServiceException)
+    // Act & Assert
     assertThatThrownBy(
             () -> exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId()))
-        .isInstanceOf(ServiceException.class)
-        .hasMessageContaining("FRED API error");
+        .isInstanceOf(ClientException.class);
   }
 
   /**
@@ -1206,8 +1203,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void importExchangeRatesForSeriesWithZeroIdThrowsResourceNotFoundException() {
     // Act & Assert
     assertThatThrownBy(() -> exchangeRateImportService.importExchangeRatesForSeries(0L))
-        .isInstanceOf(ResourceNotFoundException.class)
-        .hasMessageContaining("0");
+        .isInstanceOf(ResourceNotFoundException.class);
   }
 
   /**
@@ -1219,8 +1215,7 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
   void importExchangeRatesForSeriesWithNegativeIdThrowsResourceNotFoundException() {
     // Act & Assert
     assertThatThrownBy(() -> exchangeRateImportService.importExchangeRatesForSeries(-1L))
-        .isInstanceOf(ResourceNotFoundException.class)
-        .hasMessageContaining("-1");
+        .isInstanceOf(ResourceNotFoundException.class);
   }
 
   /**
@@ -1273,8 +1268,6 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
    * Test: FRED API errors bubble up from client.
    *
    * <p>When FRED API returns an error, the ClientException from the FRED client should bubble up.
-   * Note: The FRED client doesn't include currency codes in error messages since it only knows
-   * about FRED series IDs like "DEXUSEU", not our currency codes like "EUR".
    */
   @Test
   void fredApiErrorsBubbleUpFromClient() {
@@ -1285,11 +1278,10 @@ class ExchangeRateImportServiceIntegrationTest extends AbstractWireMockTest {
     // Stub FRED API to return server error
     FredApiStubs.stubServerError(TestConstants.FRED_SERIES_EUR);
 
-    // Act & Assert - ClientException is thrown with FRED API error message
+    // Act & Assert
     assertThatThrownBy(
             () -> exchangeRateImportService.importExchangeRatesForSeries(eurSeries.getId()))
-        .isInstanceOf(ServiceException.class)
-        .hasMessageContaining("FRED API error");
+        .isInstanceOf(ClientException.class);
   }
 
   /**

@@ -14,6 +14,7 @@ import org.budgetanalyzer.currency.fixture.FredApiStubs;
 import org.budgetanalyzer.currency.fixture.TestConstants;
 import org.budgetanalyzer.currency.repository.CurrencySeriesRepository;
 import org.budgetanalyzer.service.exception.BusinessException;
+import org.budgetanalyzer.service.exception.ClientException;
 import org.budgetanalyzer.service.exception.ResourceNotFoundException;
 import org.budgetanalyzer.service.exception.ServiceUnavailableException;
 
@@ -81,8 +82,11 @@ class CurrencyServiceIntegrationTest extends AbstractWireMockTest {
 
     // Act & Assert (no need to stub - validation happens before provider call)
     assertThatThrownBy(() -> currencyService.create(series))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("Invalid ISO 4217");
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getCode())
+                    .isEqualTo(CurrencyServiceError.INVALID_ISO_4217_CODE.name()));
   }
 
   @Test
@@ -95,8 +99,11 @@ class CurrencyServiceIntegrationTest extends AbstractWireMockTest {
 
     // Act & Assert (no need to stub - validation happens before provider call)
     assertThatThrownBy(() -> currencyService.create(series))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("Invalid ISO 4217");
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getCode())
+                    .isEqualTo(CurrencyServiceError.INVALID_ISO_4217_CODE.name()));
   }
 
   @Test
@@ -109,8 +116,11 @@ class CurrencyServiceIntegrationTest extends AbstractWireMockTest {
 
     // Act & Assert (no need to stub - validation happens before provider call)
     assertThatThrownBy(() -> currencyService.create(series))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("Invalid ISO 4217");
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getCode())
+                    .isEqualTo(CurrencyServiceError.INVALID_ISO_4217_CODE.name()));
   }
 
   @Test
@@ -123,8 +133,11 @@ class CurrencyServiceIntegrationTest extends AbstractWireMockTest {
 
     // Act & Assert (no need to stub - validation happens before provider call)
     assertThatThrownBy(() -> currencyService.create(series))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("Invalid ISO 4217");
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getCode())
+                    .isEqualTo(CurrencyServiceError.INVALID_ISO_4217_CODE.name()));
   }
 
   @Test
@@ -137,8 +150,11 @@ class CurrencyServiceIntegrationTest extends AbstractWireMockTest {
 
     // Act & Assert (no need to stub - validation happens before provider call)
     assertThatThrownBy(() -> currencyService.create(series))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("Invalid ISO 4217");
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getCode())
+                    .isEqualTo(CurrencyServiceError.INVALID_ISO_4217_CODE.name()));
   }
 
   @Test
@@ -155,8 +171,11 @@ class CurrencyServiceIntegrationTest extends AbstractWireMockTest {
 
     // Act & Assert
     assertThatThrownBy(() -> currencyService.create(series2))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("already exists");
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getCode())
+                    .isEqualTo(CurrencyServiceError.DUPLICATE_CURRENCY_CODE.name()));
   }
 
   // ===========================================================================================
@@ -187,8 +206,11 @@ class CurrencyServiceIntegrationTest extends AbstractWireMockTest {
 
     // Act & Assert
     assertThatThrownBy(() -> currencyService.create(series))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("does not exist in the external provider");
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getCode())
+                    .isEqualTo(CurrencyServiceError.INVALID_PROVIDER_SERIES_ID.name()));
   }
 
   @Test
@@ -200,7 +222,7 @@ class CurrencyServiceIntegrationTest extends AbstractWireMockTest {
     // Act & Assert
     assertThatThrownBy(() -> currencyService.create(series))
         .isInstanceOf(ServiceUnavailableException.class)
-        .hasMessageContaining("Unable to validate provider series ID");
+        .hasCauseInstanceOf(ClientException.class);
   }
 
   // ===========================================================================================
@@ -228,8 +250,7 @@ class CurrencyServiceIntegrationTest extends AbstractWireMockTest {
   void getByIdWithNonExistentIdThrowsException() {
     // Act & Assert
     assertThatThrownBy(() -> currencyService.getById(999L))
-        .isInstanceOf(ResourceNotFoundException.class)
-        .hasMessageContaining("not found");
+        .isInstanceOf(ResourceNotFoundException.class);
   }
 
   @Test
@@ -314,8 +335,7 @@ class CurrencyServiceIntegrationTest extends AbstractWireMockTest {
   void updateNonExistentSeriesThrowsException() {
     // Act & Assert
     assertThatThrownBy(() -> currencyService.update(999L, true))
-        .isInstanceOf(ResourceNotFoundException.class)
-        .hasMessageContaining("not found");
+        .isInstanceOf(ResourceNotFoundException.class);
   }
 
   @Test

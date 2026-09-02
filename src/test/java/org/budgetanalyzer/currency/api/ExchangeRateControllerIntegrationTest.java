@@ -39,7 +39,7 @@ import org.budgetanalyzer.service.security.test.ClaimsHeaderTestBuilder;
  * <p>These are full integration tests covering HTTP layer → Controller → Service → Repository →
  * Database using real PostgreSQL via TestContainers and WireMock for FRED API mocking.
  */
-class ExchangeRateControllerTest extends AbstractControllerTest {
+class ExchangeRateControllerIntegrationTest extends AbstractControllerTest {
 
   @Autowired private CurrencySeriesRepository currencySeriesRepository;
   @Autowired private ExchangeRateRepository exchangeRateRepository;

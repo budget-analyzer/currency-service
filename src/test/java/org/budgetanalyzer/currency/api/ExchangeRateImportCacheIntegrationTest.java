@@ -26,7 +26,7 @@ import org.budgetanalyzer.service.security.test.ClaimsHeaderTestBuilder;
  * <p>Requires Redis cache to be enabled to verify cache behavior through the API.
  */
 @TestPropertySource(properties = "spring.cache.type=redis")
-class ExchangeRateImportCacheTest extends AbstractControllerTest {
+class ExchangeRateImportCacheIntegrationTest extends AbstractControllerTest {
 
   @Autowired private CurrencySeriesRepository currencySeriesRepository;
 

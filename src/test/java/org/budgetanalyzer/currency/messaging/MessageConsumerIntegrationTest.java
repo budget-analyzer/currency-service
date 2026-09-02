@@ -1,8 +1,8 @@
 package org.budgetanalyzer.currency.messaging;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ import org.budgetanalyzer.currency.service.CurrencyService;
  * <p><b>Key Improvements Over Original Tests:</b>
  *
  * <ul>
- *   <li>Uses exact assertions ({@code assertEquals(8, count)}) instead of {@code > 0}
+ *   <li>Uses exact count assertions instead of {@code > 0}
  *   <li>Validates correlation ID propagation through entire flow
  * </ul>
  */
@@ -80,7 +80,9 @@ class MessageConsumerIntegrationTest extends AbstractWireMockTest {
         .untilAsserted(
             () -> {
               Long count = exchangeRateRepository.countByCurrencySeries(created);
-              assertEquals(8, count, "Should import exactly 8 exchange rates from FRED stub data");
+              assertThat(count)
+                  .as("Should import exactly 8 exchange rates from FRED stub data")
+                  .isEqualTo(8L);
             });
   }
 
@@ -115,12 +117,14 @@ class MessageConsumerIntegrationTest extends AbstractWireMockTest {
         .untilAsserted(
             () -> {
               Long eurCount = exchangeRateRepository.countByCurrencySeries(createdEur);
-              assertEquals(
-                  8, eurCount, "EUR should import exactly 8 exchange rates from FRED stub data");
+              assertThat(eurCount)
+                  .as("EUR should import exactly 8 exchange rates from FRED stub data")
+                  .isEqualTo(8L);
 
               Long cadCount = exchangeRateRepository.countByCurrencySeries(createdCad);
-              assertEquals(
-                  8, cadCount, "CAD should import exactly 8 exchange rates from FRED stub data");
+              assertThat(cadCount)
+                  .as("CAD should import exactly 8 exchange rates from FRED stub data")
+                  .isEqualTo(8L);
             });
   }
 
@@ -131,8 +135,7 @@ class MessageConsumerIntegrationTest extends AbstractWireMockTest {
    * event. Therefore, the consumer never receives a message for disabled currencies in the normal
    * event flow, and no import occurs.
    *
-   * <p><b>Improvement:</b> Uses exact count ({@code assertEquals(0, count)}) instead of weak
-   * assertion ({@code isGreaterThan(0)}).
+   * <p><b>Improvement:</b> Uses an exact zero count instead of a weak positive-count assertion.
    */
   @Test
   void shouldOnlyPublishImportRequestForEnabledCurrency() {
@@ -156,14 +159,14 @@ class MessageConsumerIntegrationTest extends AbstractWireMockTest {
         .untilAsserted(
             () -> {
               Long enabledCount = exchangeRateRepository.countByCurrencySeries(createdEnabled);
-              assertEquals(
-                  8,
-                  enabledCount,
-                  "Enabled currency should import exactly 8 exchange rates from FRED stub data");
+              assertThat(enabledCount)
+                  .as("Enabled currency should import exactly 8 exchange rates from FRED stub data")
+                  .isEqualTo(8L);
 
               Long disabledCount = exchangeRateRepository.countByCurrencySeries(createdDisabled);
-              assertEquals(
-                  0, disabledCount, "Disabled currency should NOT import any exchange rates");
+              assertThat(disabledCount)
+                  .as("Disabled currency should NOT import any exchange rates")
+                  .isEqualTo(0L);
             });
   }
 

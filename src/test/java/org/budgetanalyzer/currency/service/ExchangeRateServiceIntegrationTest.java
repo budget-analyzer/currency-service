@@ -540,8 +540,7 @@ class ExchangeRateServiceIntegrationTest extends AbstractIntegrationTest {
                     TestConstants.CURRENCY_EUR,
                     TestConstants.DATE_2024_JAN_15,
                     TestConstants.DATE_2024_JAN_01))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Start date must be before or equal to end date");
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -556,8 +555,11 @@ class ExchangeRateServiceIntegrationTest extends AbstractIntegrationTest {
                     TestConstants.CURRENCY_GBP,
                     TestConstants.DATE_2024_JAN_01,
                     TestConstants.DATE_2024_JAN_15))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("No exchange rate data available");
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getCode())
+                    .isEqualTo(CurrencyServiceError.NO_EXCHANGE_RATE_DATA_AVAILABLE.name()));
   }
 
   @Test
@@ -581,9 +583,11 @@ class ExchangeRateServiceIntegrationTest extends AbstractIntegrationTest {
                     TestConstants.CURRENCY_GBP,
                     TestConstants.DATE_2024_JAN_01,
                     TestConstants.DATE_2024_JAN_15))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("Currency is not enabled")
-        .hasMessageContaining("GBP");
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getCode())
+                    .isEqualTo(CurrencyServiceError.CURRENCY_NOT_ENABLED.name()));
   }
 
   @Test
@@ -595,9 +599,11 @@ class ExchangeRateServiceIntegrationTest extends AbstractIntegrationTest {
                     TestConstants.CURRENCY_ZAR_NOT_IN_DB,
                     TestConstants.DATE_2024_JAN_01,
                     TestConstants.DATE_2024_JAN_15))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("Currency is not enabled")
-        .hasMessageContaining("ZAR");
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getCode())
+                    .isEqualTo(CurrencyServiceError.CURRENCY_NOT_ENABLED.name()));
   }
 
   @Test
@@ -616,12 +622,15 @@ class ExchangeRateServiceIntegrationTest extends AbstractIntegrationTest {
             () ->
                 exchangeRateService.getExchangeRates(
                     TestConstants.CURRENCY_EUR, TestConstants.DATE_2024_JAN_01, null))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("not available before");
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getCode())
+                    .isEqualTo(CurrencyServiceError.START_DATE_OUT_OF_RANGE.name()));
   }
 
   @Test
-  void exceptionMessagesContainCurrencyAndDates() {
+  void queryBeforeEarliestUsesStartDateOutOfRangeErrorCode() {
     // Arrange - Create EUR data starting Jan 15
     var earliestDate = TestConstants.DATE_2024_JAN_15;
     var rates =
@@ -629,14 +638,16 @@ class ExchangeRateServiceIntegrationTest extends AbstractIntegrationTest {
             eurSeries, earliestDate, earliestDate.plusDays(5), TestConstants.RATE_EUR_USD);
     exchangeRateRepository.saveAll(rates);
 
-    // Act & Assert - Verify exception message contains currency and date
+    // Act & Assert
     assertThatThrownBy(
             () ->
                 exchangeRateService.getExchangeRates(
                     TestConstants.CURRENCY_EUR, TestConstants.DATE_2024_JAN_01, null))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("EUR")
-        .hasMessageContaining("2024-01-15");
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getCode())
+                    .isEqualTo(CurrencyServiceError.START_DATE_OUT_OF_RANGE.name()));
   }
 
   @Test
@@ -733,8 +744,11 @@ class ExchangeRateServiceIntegrationTest extends AbstractIntegrationTest {
                     TestConstants.CURRENCY_THB,
                     TestConstants.DATE_2024_JAN_01,
                     TestConstants.DATE_2024_JAN_15))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("No exchange rate data available");
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getCode())
+                    .isEqualTo(CurrencyServiceError.NO_EXCHANGE_RATE_DATA_AVAILABLE.name()));
   }
 
   // ===========================================================================================

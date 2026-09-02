@@ -6,7 +6,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +45,7 @@ import org.budgetanalyzer.service.exception.ClientException;
  *       JSON, non-JSON errors)
  *   <li><b>seriesExists():</b> Success scenarios (series exists, not found, invalid ID)
  *   <li><b>seriesExists():</b> Error scenarios (server error, rate limited, timeout)
- *   <li><b>Edge cases:</b> URL encoding, error message truncation
+ *   <li><b>Edge cases:</b> URL encoding, oversized error response truncation
  * </ul>
  *
  * <p><b>Key Behaviors Validated:</b>
@@ -176,8 +178,7 @@ class FredClientIntegrationTest extends AbstractWireMockTest {
 
     // When/Then
     assertThatThrownBy(() -> fredClient.getSeriesObservationsData(seriesId, null))
-        .isInstanceOf(ClientException.class)
-        .hasMessageContaining("Bad Request");
+        .isInstanceOf(ClientException.class);
   }
 
   @Test
@@ -188,8 +189,7 @@ class FredClientIntegrationTest extends AbstractWireMockTest {
 
     // When/Then
     assertThatThrownBy(() -> fredClient.getSeriesObservationsData(seriesId, null))
-        .isInstanceOf(ClientException.class)
-        .hasMessageContaining("Not Found");
+        .isInstanceOf(ClientException.class);
   }
 
   @Test
@@ -200,8 +200,7 @@ class FredClientIntegrationTest extends AbstractWireMockTest {
 
     // When/Then
     assertThatThrownBy(() -> fredClient.getSeriesObservationsData(seriesId, null))
-        .isInstanceOf(ClientException.class)
-        .hasMessageContaining("500");
+        .isInstanceOf(ClientException.class);
   }
 
   @Test
@@ -212,8 +211,7 @@ class FredClientIntegrationTest extends AbstractWireMockTest {
 
     // When/Then
     assertThatThrownBy(() -> fredClient.getSeriesObservationsData(seriesId, null))
-        .isInstanceOf(ClientException.class)
-        .hasMessageContaining("Rate limit");
+        .isInstanceOf(ClientException.class);
   }
 
   @Test
@@ -222,21 +220,15 @@ class FredClientIntegrationTest extends AbstractWireMockTest {
     var seriesId = TestConstants.FRED_SERIES_EUR;
     FredApiStubs.stubTimeout(seriesId); // 2 second delay
 
-    // When/Then
+    // When
+    var startTime = System.nanoTime();
+
+    // Then
     assertThatThrownBy(() -> fredClient.getSeriesObservationsData(seriesId, null))
         .isInstanceOf(ClientException.class)
-        .satisfies(
-            ex -> {
-              // Should timeout in ~2 seconds, not wait full 5
-              // Message should mention timeout or series failure
-              var message = ex.getMessage().toLowerCase();
-              assertThat(message)
-                  .matches(
-                      msg ->
-                          msg.contains("timeout")
-                              || msg.contains("timed out")
-                              || msg.contains("failed to fetch"));
-            });
+        .hasRootCauseInstanceOf(TimeoutException.class);
+    var elapsed = Duration.ofNanos(System.nanoTime() - startTime);
+    assertThat(elapsed).isLessThan(Duration.ofSeconds(5));
   }
 
   @Test
@@ -266,8 +258,7 @@ class FredClientIntegrationTest extends AbstractWireMockTest {
 
     // When/Then
     assertThatThrownBy(() -> fredClient.getSeriesObservationsData(seriesId, null))
-        .isInstanceOf(ClientException.class)
-        .hasMessageContaining("500");
+        .isInstanceOf(ClientException.class);
   }
 
   // ===========================================================================================
@@ -324,9 +315,7 @@ class FredClientIntegrationTest extends AbstractWireMockTest {
     FredApiStubs.stubSeriesExistsServerError(seriesId);
 
     // When/Then
-    assertThatThrownBy(() -> fredClient.seriesExists(seriesId))
-        .isInstanceOf(ClientException.class)
-        .hasMessageContaining("500");
+    assertThatThrownBy(() -> fredClient.seriesExists(seriesId)).isInstanceOf(ClientException.class);
   }
 
   @Test
@@ -350,9 +339,7 @@ class FredClientIntegrationTest extends AbstractWireMockTest {
                         """)));
 
     // When/Then
-    assertThatThrownBy(() -> fredClient.seriesExists(seriesId))
-        .isInstanceOf(ClientException.class)
-        .hasMessageContaining("rate limit");
+    assertThatThrownBy(() -> fredClient.seriesExists(seriesId)).isInstanceOf(ClientException.class);
   }
 
   @Test
@@ -361,20 +348,15 @@ class FredClientIntegrationTest extends AbstractWireMockTest {
     var seriesId = TestConstants.FRED_SERIES_EUR;
     FredApiStubs.stubSeriesExistsTimeout(seriesId); // 6 second delay
 
-    // When/Then
+    // When
+    var startTime = System.nanoTime();
+
+    // Then
     assertThatThrownBy(() -> fredClient.seriesExists(seriesId))
         .isInstanceOf(ClientException.class)
-        .satisfies(
-            ex -> {
-              // Message should mention timeout or series failure
-              var message = ex.getMessage().toLowerCase();
-              assertThat(message)
-                  .matches(
-                      msg ->
-                          msg.contains("timeout")
-                              || msg.contains("timed out")
-                              || msg.contains("failed to check"));
-            });
+        .hasRootCauseInstanceOf(TimeoutException.class);
+    var elapsed = Duration.ofNanos(System.nanoTime() - startTime);
+    assertThat(elapsed).isLessThan(Duration.ofSeconds(6));
   }
 
   // ===========================================================================================

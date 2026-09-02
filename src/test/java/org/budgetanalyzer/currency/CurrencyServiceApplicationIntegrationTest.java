@@ -19,7 +19,7 @@ import org.budgetanalyzer.currency.base.AbstractIntegrationTest;
  * </ul>
  */
 @DisplayName("Application Smoketest")
-class CurrencyServiceApplicationTests extends AbstractIntegrationTest {
+class CurrencyServiceApplicationIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   void contextLoads() {

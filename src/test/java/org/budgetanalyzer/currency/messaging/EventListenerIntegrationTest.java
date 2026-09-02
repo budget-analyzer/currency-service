@@ -1,8 +1,8 @@
 package org.budgetanalyzer.currency.messaging;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Duration;
 
@@ -71,15 +71,18 @@ class EventListenerIntegrationTest extends AbstractWireMockTest {
         .untilAsserted(
             () -> {
               var completedEvents = countCompletedEvents();
-              assertEquals(1, completedEvents, "Should have exactly 1 completed event");
+              assertThat(completedEvents).as("Should have exactly 1 completed event").isEqualTo(1L);
 
               // Only enabled currency should have imported rates
               var enabledRates = exchangeRateRepository.countByCurrencySeries(createdEnabled);
-              assertEquals(
-                  8, enabledRates, "Enabled currency should import exactly 8 exchange rates");
+              assertThat(enabledRates)
+                  .as("Enabled currency should import exactly 8 exchange rates")
+                  .isEqualTo(8L);
 
               var disabledRates = exchangeRateRepository.countByCurrencySeries(createdDisabled);
-              assertEquals(0, disabledRates, "Disabled currency should NOT import any rates");
+              assertThat(disabledRates)
+                  .as("Disabled currency should NOT import any rates")
+                  .isEqualTo(0L);
             });
   }
 
@@ -100,11 +103,14 @@ class EventListenerIntegrationTest extends AbstractWireMockTest {
         .untilAsserted(
             () -> {
               var completedEvents = countCompletedEvents();
-              assertEquals(1, completedEvents, "Create should publish one import event");
+              assertThat(completedEvents)
+                  .as("Create should publish one import event")
+                  .isEqualTo(1L);
 
               var importedRates = exchangeRateRepository.countByCurrencySeries(created);
-              assertEquals(
-                  8, importedRates, "Enabled currency should import exactly 8 exchange rates");
+              assertThat(importedRates)
+                  .as("Enabled currency should import exactly 8 exchange rates")
+                  .isEqualTo(8L);
             });
 
     // Act
@@ -117,10 +123,14 @@ class EventListenerIntegrationTest extends AbstractWireMockTest {
         .untilAsserted(
             () -> {
               var completedEvents = countCompletedEvents();
-              assertEquals(1, completedEvents, "Disable should not publish another event");
+              assertThat(completedEvents)
+                  .as("Disable should not publish another event")
+                  .isEqualTo(1L);
 
               var importedRates = exchangeRateRepository.countByCurrencySeries(disabled);
-              assertEquals(8, importedRates, "Disable should not trigger another import");
+              assertThat(importedRates)
+                  .as("Disable should not trigger another import")
+                  .isEqualTo(8L);
             });
   }
 

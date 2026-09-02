@@ -666,7 +666,7 @@ service and assert the affected cache entry or returned data.
 
 ```java
 @TestPropertySource(properties = "spring.cache.type=redis")
-class ExchangeRateImportCacheTest extends AbstractControllerTest {
+class ExchangeRateImportCacheIntegrationTest extends AbstractControllerTest {
 
     @Autowired
     private CacheManager cacheManager;
@@ -687,7 +687,7 @@ class ExchangeRateImportCacheTest extends AbstractControllerTest {
 ```
 
 See
-[`ExchangeRateImportCacheTest`](../src/test/java/org/budgetanalyzer/currency/api/ExchangeRateImportCacheTest.java)
+[`ExchangeRateImportCacheIntegrationTest`](../src/test/java/org/budgetanalyzer/currency/api/ExchangeRateImportCacheIntegrationTest.java)
 for the complete persisted setup and authenticated API request.
 
 ### Event-Driven Messaging Testing
